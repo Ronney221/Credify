@@ -55,8 +55,87 @@ const perkNameMappings: Record<string, PerkTargetConfig> = {
     appStoreUrlIOS: 'https://apps.apple.com/app/resy/id799274035',
     appStoreUrlAndroid: 'https://play.google.com/store/apps/details?id=com.resy.android',
   },
-  // Add more perk name mappings here
-  // e.g., "Monthly Dining Credit": { appScheme: 'resy://', websiteUrl: 'https://resy.com', appName: 'Resy' }
+  /* ────── Amex Platinum "Digital Entertainment Credit" choices ────── */
+  "Disney+ Credit": {
+    appScheme: "disneyplus://",
+    websiteUrl: "https://www.disneyplus.com/",
+    appName: "Disney+",
+    appStoreUrlIOS: "https://apps.apple.com/app/id1446075923",
+    appStoreUrlAndroid: "https://play.google.com/store/apps/details?id=com.disney.disneyplus",
+  },
+  "Hulu Credit": {
+    appScheme: "hulu://",
+    websiteUrl: "https://www.hulu.com/",
+    appName: "Hulu",
+    appStoreUrlIOS: "https://apps.apple.com/app/id376510438",
+    appStoreUrlAndroid: "https://play.google.com/store/apps/details?id=com.hulu.plus",
+  },
+  "ESPN+ Credit": {
+    appScheme: "sportscenter://",          // ESPN's registered scheme
+    websiteUrl: "https://www.espn.com/espnplus/",
+    appName: "ESPN",
+    appStoreUrlIOS: "https://apps.apple.com/app/id317469184",
+    appStoreUrlAndroid: "https://play.google.com/store/apps/details?id=com.espn.score_center",
+  },
+  "Peacock Credit": {
+    appScheme: "peacock://",
+    websiteUrl: "https://www.peacocktv.com/",
+    appName: "Peacock",
+    appStoreUrlIOS: "https://apps.apple.com/app/id1508186374",
+    appStoreUrlAndroid: "https://play.google.com/store/apps/details?id=com.peacocktv.peacockandroid",
+  },
+  "NYTimes Credit": {
+    appScheme: "nytimes://",
+    websiteUrl: "https://www.nytimes.com/",
+    appName: "The New York Times",
+    appStoreUrlIOS: "https://apps.apple.com/app/id284862083",
+    appStoreUrlAndroid: "https://play.google.com/store/apps/details?id=com.nytimes.android",
+  },
+
+  /* ────── Walmart+ rebate (Amex Platinum) ────── */
+  "Walmart+ Membership Rebate": {
+    appScheme: "walmart://",
+    websiteUrl: "https://www.walmart.com/plus",
+    appName: "Walmart",
+    appStoreUrlIOS: "https://apps.apple.com/app/id338137227",
+    appStoreUrlAndroid: "https://play.google.com/store/apps/details?id=com.walmart.android",
+  },
+
+  /* ────── DoorDash restaurant credit (CSR) ────── */
+  "DoorDash Restaurant Credit": {          // distinct from Grocery credit
+    appScheme: "doordash://",
+    websiteUrl: "https://www.doordash.com/",
+    appName: "DoorDash",
+    appStoreUrlIOS: "https://apps.apple.com/app/id719972451",
+    appStoreUrlAndroid: "https://play.google.com/store/apps/details?id=com.dd.doordash",
+  },
+
+  /* ────── Instacart credit (CSR/CSP) ────── */
+  "Instacart Credit": {
+    appScheme: "instacart://",
+    websiteUrl: "https://www.instacart.com/",
+    appName: "Instacart",
+    appStoreUrlIOS: "https://apps.apple.com/app/id545599256",
+    appStoreUrlAndroid: "https://play.google.com/store/apps/details?id=com.instacart.client",
+  },
+
+  /* ────── Capital One Venture X travel portal ────── */
+  "Capital One Travel Credit": {
+    appScheme: "capitalone://",
+    websiteUrl: "https://travel.capitalone.com/",
+    appName: "Capital One",
+    appStoreUrlIOS: "https://apps.apple.com/app/id407558537",
+    appStoreUrlAndroid: "https://play.google.com/store/apps/details?id=com.capitalone.mobile",
+  },
+
+  /* ────── CLEAR Plus credit (Amex Green) ────── */
+  "CLEAR Plus Credit": {
+    appScheme: "",                         // no documented scheme
+    websiteUrl: "https://www.clearme.com/",
+    appName: "CLEAR",
+    appStoreUrlIOS: "https://apps.apple.com/app/id1436333504",
+    appStoreUrlAndroid: "https://play.google.com/store/apps/details?id=com.clearme.clearapp",
+  },
 };
 
 export const openPerkTarget = async (perk: CardPerk): Promise<boolean> => {

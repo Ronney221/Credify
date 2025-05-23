@@ -89,7 +89,7 @@ export default function CardSelectionScreen() {
   }, [searchQuery, allCards]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
       <Text style={styles.title}>Select Your Cards</Text>
       <View style={styles.searchContainer}>

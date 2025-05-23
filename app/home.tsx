@@ -205,11 +205,27 @@ export default function HomeScreen() {
 
   // Configuration for multi-choice perks
   const multiChoicePerksConfig: Record<string, Array<{ label: string; targetPerkName: string }>> = {
-    // Example: Assumes you have a perk named "Flexible Food Delivery Credit" in your card-data.ts
     "Uber / Grubhub Credit": [
       { label: "Open Uber (Rides)", targetPerkName: "Uber Ride Credit" },
       { label: "Open Uber Eats", targetPerkName: "Uber Eats Credit" },
       { label: "Open GrubHub", targetPerkName: "Grubhub Credit" },
+    ],
+    "Uber Cash": [
+      { label: "Open Uber (Rides)", targetPerkName: "Uber Ride Credit" }, // Assumes "Uber Ride Credit" is in linking.ts
+      { label: "Open Uber Eats", targetPerkName: "Uber Eats Credit" },   // Assumes "Uber Eats Credit" is in linking.ts
+    ],
+    "Digital Entertainment Credit": [
+      { label: "Open Disney+", targetPerkName: "Disney+ Credit" },
+      { label: "Open Hulu", targetPerkName: "Hulu Credit" },
+      { label: "Open ESPN+", targetPerkName: "ESPN+ Credit" },
+      { label: "Open Peacock", targetPerkName: "Peacock Credit" },
+      { label: "Open NYTimes", targetPerkName: "NYTimes Credit" },
+      // Note: Wall Street Journal can be added here once its linking.ts mapping is available
+    ],
+    "Disney Bundle Credit": [
+      { label: "Open Disney+", targetPerkName: "Disney+ Credit" },
+      { label: "Open Hulu", targetPerkName: "Hulu Credit" },
+      { label: "Open ESPN+", targetPerkName: "ESPN+ Credit" },
     ],
     // Add other flexible perks here if needed
   };
@@ -410,7 +426,7 @@ export default function HomeScreen() {
   // TODO: Implement functions to calculate summary data (monthly, yearly credits, value used)
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={[]}>
       {/* <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} /> */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitle}>Dashboard</Text>
@@ -427,6 +443,7 @@ export default function HomeScreen() {
             mode="date"
             display={Platform.OS === 'ios' ? 'spinner' : 'default'}
             onChange={handleDevDateChange}
+            {...(Platform.OS === 'ios' && { textColor: Colors.light.text })}
           />
         )}
 

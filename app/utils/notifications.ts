@@ -87,7 +87,7 @@ export const scheduleCardRenewalReminder = async (
 ): Promise<string | null> => {
   const reminderDate = new Date(renewalDate);
   reminderDate.setDate(renewalDate.getDate() - daysBefore);
-  reminderDate.setHours(9, 0, 0, 0); // 9 AM
+  reminderDate.setHours(23, 59, 50, 0); // Set to 11:59:50 PM
 
   if (reminderDate > new Date()) {
     return scheduleNotificationAsync(
@@ -112,14 +112,14 @@ export const scheduleMonthlyPerkResetNotifications = async (): Promise<(string |
 
   const endOfMonth = new Date(year, month + 1, 0);
   const startOfNext = new Date(year, month + 1, 1);
-  startOfNext.setHours(9, 0, 0, 0);
+  startOfNext.setHours(23, 59, 50, 0); // Set to 11:59:50 PM
 
   const tasks: Promise<string | null>[] = [];
 
   // 7 days before month end
   const sevenBefore = new Date(endOfMonth);
   sevenBefore.setDate(sevenBefore.getDate() - 7);
-  sevenBefore.setHours(9, 0, 0, 0);
+  sevenBefore.setHours(23, 59, 50, 0); // Set to 11:59:50 PM
   if (sevenBefore > now) {
     tasks.push(
       scheduleNotificationAsync(
@@ -133,7 +133,7 @@ export const scheduleMonthlyPerkResetNotifications = async (): Promise<(string |
   // 3 days before month end
   const threeBefore = new Date(endOfMonth);
   threeBefore.setDate(threeBefore.getDate() - 3);
-  threeBefore.setHours(9, 0, 0, 0);
+  threeBefore.setHours(23, 59, 50, 0); // Set to 11:59:50 PM
   if (threeBefore > now) {
     tasks.push(
       scheduleNotificationAsync(
