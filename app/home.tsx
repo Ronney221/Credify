@@ -15,6 +15,7 @@ import { Card, Benefit, allCards } from '../src/data/card-data'; // Assuming sel
 import { openPerkTarget } from './utils/linking'; // Import the new utility
 import UserCardItem from './components/home/UserCardItem';
 import SummaryDashboard from './components/home/SummaryDashboard';
+import LottieView from 'lottie-react-native'; // Import LottieView
 
 // Define PerkStatus type
 type PerkStatus = 'available' | 'pending' | 'redeemed';
@@ -24,6 +25,7 @@ export interface CardPerk extends Benefit {
   cardId: string;
   status: PerkStatus;
   streakCount: number; // Added for streak tracking
+  coldStreakCount: number; // Added for cold streak tracking
 }
 
 // Placeholder for fetching/calculating user's selected cards and their perks
@@ -49,6 +51,7 @@ const getSelectedUserCardsWithPerks = (
         cardId: card.id,
         status: 'available' as PerkStatus,
         streakCount: 0, // Initialize streak count
+        coldStreakCount: 0, // Initialize cold streak count
       })),
     }));
 };
@@ -75,6 +78,8 @@ export default function HomeScreen() {
   );
   // Stores which monthly perks have been redeemed *within the current cycle* to avoid double-counting streaks
   const [redeemedInCurrentCycle, setRedeemedInCurrentCycle] = useState<Record<string, boolean>>({});
+  // New state to track cumulative value saved per card (for the session)
+  const [cumulativeValueSavedPerCard, setCumulativeValueSavedPerCard] = useState<Record<string, number>>({});
 
   // State for celebration animation
   const [showCelebration, setShowCelebration] = useState(false);
@@ -113,7 +118,7 @@ export default function HomeScreen() {
           }
         // Linter error fix: Assuming 'annually' covers 'yearly'. 
         // If card-data.ts uses 'yearly' ensure it's included or change this condition.
-        } else if (perk.period === 'annually') { 
+        } else if (perk.period === 'yearly') {
           yPossible += perk.value;
           if (perk.status === 'redeemed') {
             yRedeemed += perk.value;
@@ -160,8 +165,14 @@ export default function HomeScreen() {
               if (p.period === 'monthly' && newStatus === 'redeemed' && p.status !== 'redeemed' && !redeemedInCurrentCycle[p.id]) {
                 console.log(`Incrementing streak for ${p.name}`);
                 setRedeemedInCurrentCycle(prev => ({ ...prev, [p.id]: true }));
+                // Increment cumulative saved value
+                setCumulativeValueSavedPerCard(prev => ({...prev, [cardId]: (prev[cardId] || 0) + p.value }));
                 return { ...p, status: newStatus, streakCount: p.streakCount + 1 };
-              }              
+              } else if (newStatus === 'redeemed' && p.status !== 'redeemed') {
+                // For non-monthly perks or monthly perks already counted for streak in this cycle
+                // but changing from a non-redeemed to redeemed state
+                setCumulativeValueSavedPerCard(prev => ({...prev, [cardId]: (prev[cardId] || 0) + p.value }));
+              }
               return { ...p, status: newStatus };
             }
             return p;
@@ -279,22 +290,40 @@ export default function HomeScreen() {
 
     if (newCycleIdentifier !== currentCycleIdentifier || forceNextMonthForTesting) {
       console.log(`Processing month change! Old cycle: ${currentCycleIdentifier}, New cycle: ${newCycleIdentifier}`);
+      
+      const [prevYearStr, prevMonthStr] = currentCycleIdentifier.split('-');
+      const prevYear = parseInt(prevYearStr, 10);
+      const prevMonth = parseInt(prevMonthStr, 10);
+
+      const hasAYearPassed = (newCycleIdentifier_Year * 12 + newCycleIdentifier_Month) >= (prevYear * 12 + prevMonth + 12);
+      if (forceNextMonthForTesting && hasAYearPassed) {
+        console.log("DEV: A conceptual year has passed due to forced month changes.");
+      }
+
       setUserCardsWithPerks(currentData => 
         currentData.map(cardData => ({
           ...cardData,
           perks: cardData.perks.map(p => {
             let newStreakCount = p.streakCount;
+            let newColdStreakCount = p.coldStreakCount;
+            let newStatus = p.status;
+
             if (p.period === 'monthly') {
-              // If the perk wasn't redeemed in the cycle that just ended, reset its streak.
               if (!redeemedInCurrentCycle[p.id]) {
-                console.log(`Streak broken for ${p.name} (was ${p.streakCount}), resetting to 0.`);
                 newStreakCount = 0;
+                newColdStreakCount += 1; // Increment cold streak
+                console.log(`Cold streak for ${p.name} now ${newColdStreakCount}`);
+              } else {
+                newColdStreakCount = 0; // Reset cold streak if redeemed
               }
-              // Streaks were otherwise incremented when set to 'redeemed' in the previous cycle.
-              // So, just reset status here.
-              return { ...p, status: 'available' as PerkStatus, streakCount: newStreakCount };
+              newStatus = 'available';
+            } else if (p.period === 'yearly' && forceNextMonthForTesting && hasAYearPassed) {
+              console.log(`DEV: Resetting yearly perk ${p.name} due to forced year passage.`);
+              newStatus = 'available';
+              newStreakCount = 0; 
+              newColdStreakCount = 0; // Reset cold streak for yearly too on its reset
             }
-            return p; // Return non-monthly perks unchanged by this part of the reset
+            return { ...p, status: newStatus as PerkStatus, streakCount: newStreakCount, coldStreakCount: newColdStreakCount };
           })
         }))
       );
@@ -339,6 +368,7 @@ export default function HomeScreen() {
                 key={card.id}
                 card={card}
                 perks={perks}
+                cumulativeSavedValue={cumulativeValueSavedPerCard[card.id] || 0}
                 onTapPerk={handleTapPerk}
                 onLongPressPerk={handleLongPressPerk}
                 cardDetailItemStyle={styles.cardDetailItem}
@@ -352,6 +382,19 @@ export default function HomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      {showCelebration && (
+        <LottieView 
+          source={require('../assets/animations/celebration.json')} // Adjust path if needed
+          autoPlay 
+          loop={false} 
+          onAnimationFinish={() => {
+            console.log("Celebration animation finished.");
+            setShowCelebration(false);
+          }} 
+          style={styles.lottieCelebration} // Added a style for positioning
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -441,5 +484,14 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontSize: 16,
     color: '#666666',
+  },
+  lottieCelebration: { // Style for the Lottie animation overlay
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000, // Ensure it's on top
+    pointerEvents: 'none', // Allow taps to go through to elements behind it
   },
 }); 

@@ -2,7 +2,7 @@ export interface Benefit {
   id: string;
   name: string;
   value: number; // Can be monetary value or other unit
-  period: 'monthly' | 'quarterly' | 'annually' | 'one-time';
+  period: 'monthly' | 'quarterly' | 'yearly' | 'one-time';
   description?: string; // Optional detailed description
   redemptionInstructions?: string; // How to redeem, e.g., link, in-app action
   // Add other relevant fields like category (e.g., travel, dining, shopping)
@@ -41,7 +41,7 @@ export const allCards: Card[] = [
         id: 'amex_gold_resy',
         name: 'Resy Credit',
         value: 50,
-        period: 'annually',
+        period: 'yearly',
         description: 'Up to $50 in statement credits each year for Resy purchases.',
       },
     ],

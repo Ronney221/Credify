@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { CardPerk } from '../../home'; // Adjust path as needed, assuming home.tsx exports CardPerk
+import StreakBadge from './StreakBadge'; // Import StreakBadge
 
 interface PerkItemProps {
   perk: CardPerk;
@@ -31,11 +32,15 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
+  perkNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
   perkName: {
     fontSize: 15,
     fontWeight: '600',
     color: '#343a40',
-    marginBottom: 2,
   },
   perkNameRedeemed: {
     color: '#155724',
@@ -46,9 +51,10 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   streakText: {
-    fontSize: 13,
-    color: '#ff9800',
-    marginLeft: 5,
+    // This style might be deprecated if StreakBadge handles all its own styling
+    // fontSize: 13,
+    // color: '#ff9800',
+    // marginLeft: 5,
   },
   perkValue: {
     fontSize: 13,
@@ -92,6 +98,22 @@ const styles = StyleSheet.create({
     // This specific style object for pending fill might not be needed if we pass backgroundColor directly
     // backgroundColor: '#ffc107', // Yellow for pending - handled in-line now
   },
+  badgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 6, // Space between perk name and badge
+  },
+  emojiText: {
+    fontSize: 12,
+    marginRight: 3,
+  },
+  coldStreakEmojiText: { // For the cold streak emoji
+    fontSize: 12, 
+    // marginRight: 3, // Can share margin with emojiText or have its own
+  },
+  streakCountText: {
+    fontSize: 12,
+  },
 });
 
 const PerkItem: React.FC<PerkItemProps> = ({ perk, cardId, onTapPerk, onLongPressPerk }) => {
@@ -108,10 +130,18 @@ const PerkItem: React.FC<PerkItemProps> = ({ perk, cardId, onTapPerk, onLongPres
       >
         <View style={styles.perkContentRow}>
           <View style={styles.perkInfo}>
-            <Text style={[styles.perkName, isRedeemed && styles.perkNameRedeemed, isPending && styles.perkNamePending]}>
-              {perk.name}
-              {perk.streakCount > 0 && <Text style={styles.streakText}>🔥{perk.streakCount}</Text>}
-            </Text>
+            <View style={styles.perkNameContainer}>
+              <Text style={[styles.perkName, isRedeemed && styles.perkNameRedeemed, isPending && styles.perkNamePending]}>
+                {perk.name}
+              </Text>
+              <StreakBadge streakCount={perk.streakCount} />
+              {perk.coldStreakCount > 0 && (
+                <View style={styles.badgeContainer}> {/* Re-use badge container style or make a new one */}
+                  <Text style={styles.coldStreakEmojiText}>🥶</Text>
+                  <Text style={styles.streakCountText}>{perk.coldStreakCount}</Text>
+                </View>
+              )}
+            </View>
             <Text style={[styles.perkValue, isRedeemed && styles.perkValueRedeemed, isPending && styles.perkValuePending]}>
               (${perk.value} / {perk.period})
             </Text>

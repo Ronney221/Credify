@@ -7,6 +7,7 @@ import PerkItem from './PerkItem';
 interface UserCardItemProps {
   card: Card;
   perks: CardPerk[];
+  cumulativeSavedValue: number;
   onTapPerk: (cardId: string, perkId: string, perk: CardPerk) => void;
   onLongPressPerk: (cardId: string, perkId: string, perk: CardPerk) => void;
   // Styles that were originally in home.tsx for card items
@@ -19,6 +20,7 @@ interface UserCardItemProps {
 const UserCardItem: React.FC<UserCardItemProps> = ({
   card,
   perks,
+  cumulativeSavedValue,
   onTapPerk,
   onLongPressPerk,
   cardDetailItemStyle,
@@ -26,15 +28,11 @@ const UserCardItem: React.FC<UserCardItemProps> = ({
   cardNameStyle,
   valueSavedTextStyle,
 }) => {
-  const totalValueSavedForCard = perks.reduce((sum, perk) => {
-    return perk.status === 'redeemed' ? sum + perk.value : sum;
-  }, 0);
-
   return (
     <View style={cardDetailItemStyle}>
       <View style={cardHeaderContainerStyle}>
         <Text style={cardNameStyle}>{card.name}</Text>
-        <Text style={valueSavedTextStyle}>Value Saved: ${totalValueSavedForCard}</Text>
+        <Text style={valueSavedTextStyle}>Value Saved: ${cumulativeSavedValue}</Text>
       </View>
       {perks.map((perk) => (
         <PerkItem
