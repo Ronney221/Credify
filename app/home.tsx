@@ -13,7 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Card, Benefit, allCards } from '../src/data/card-data'; // Assuming selected card IDs might be passed
 import { openPerkTarget } from './utils/linking'; // Import the new utility
-import PerkItem from './components/home/PerkItem'; // Import the new PerkItem component
+import UserCardItem from './components/home/UserCardItem';
+import SummaryDashboard from './components/home/SummaryDashboard';
 
 // Define PerkStatus type
 type PerkStatus = 'available' | 'pending' | 'redeemed';
@@ -75,6 +76,9 @@ export default function HomeScreen() {
   // Stores which monthly perks have been redeemed *within the current cycle* to avoid double-counting streaks
   const [redeemedInCurrentCycle, setRedeemedInCurrentCycle] = useState<Record<string, boolean>>({});
 
+  // State for celebration animation
+  const [showCelebration, setShowCelebration] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       StatusBar.setBarStyle('dark-content');
@@ -122,6 +126,16 @@ export default function HomeScreen() {
     setMonthlyCreditsRedeemed(mRedeemed);
     setYearlyCreditsPossible(yPossible);
     setYearlyCreditsRedeemed(yRedeemed);
+
+    // Check for full monthly completion
+    if (mPossible > 0 && mRedeemed === mPossible) {
+      // Ensure celebration only triggers once per cycle for full redemption
+      // This check might need more robust logic if mPossible can change mid-cycle
+      // or if already celebrated in this cycle (e.g. by using a separate state)
+      console.log("All monthly credits redeemed this cycle!");
+      setShowCelebration(true); 
+      // Consider a flag to prevent re-triggering in the same cycle if data changes slightly
+    }
 
   }, [userCardsWithPerks]); // Only re-run if userCardsWithPerks change
 
@@ -269,12 +283,18 @@ export default function HomeScreen() {
         currentData.map(cardData => ({
           ...cardData,
           perks: cardData.perks.map(p => {
+            let newStreakCount = p.streakCount;
             if (p.period === 'monthly') {
-              // Streaks were already incremented when set to 'redeemed' in the previous cycle
+              // If the perk wasn't redeemed in the cycle that just ended, reset its streak.
+              if (!redeemedInCurrentCycle[p.id]) {
+                console.log(`Streak broken for ${p.name} (was ${p.streakCount}), resetting to 0.`);
+                newStreakCount = 0;
+              }
+              // Streaks were otherwise incremented when set to 'redeemed' in the previous cycle.
               // So, just reset status here.
-              return { ...p, status: 'available' as PerkStatus };
+              return { ...p, status: 'available' as PerkStatus, streakCount: newStreakCount };
             }
-            return p;
+            return p; // Return non-monthly perks unchanged by this part of the reset
           })
         }))
       );
@@ -299,57 +319,34 @@ export default function HomeScreen() {
           <Text>DEV: Force Next Month & Reset</Text>
         </TouchableOpacity>
 
-        {/* Summary Cards Placeholder */}
-        <View style={styles.summaryContainer}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryValue}>
-              ${monthlyCreditsRedeemed} / ${monthlyCreditsPossible}
-            </Text>
-            <Text style={styles.summaryLabel}>Monthly Credits Used</Text>
-            {/* Optional: Add Progress Bar Here */}
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryValue}>
-              ${yearlyCreditsRedeemed} / ${yearlyCreditsPossible}
-            </Text>
-            <Text style={styles.summaryLabel}>Yearly Credits Used</Text>
-            {/* Optional: Add Progress Bar Here */}
-          </View>
-          {/* Original Total Value Used - decide if still needed or how it relates
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryValue}>${totalValueUsed}</Text>
-            <Text style={styles.summaryLabel}>Total Value Used</Text>
-          </View> */}
-        </View>
+        <SummaryDashboard 
+          monthlyCreditsRedeemed={monthlyCreditsRedeemed}
+          monthlyCreditsPossible={monthlyCreditsPossible}
+          yearlyCreditsRedeemed={yearlyCreditsRedeemed}
+          yearlyCreditsPossible={yearlyCreditsPossible}
+          summaryContainerStyle={styles.summaryContainer}
+          summaryCardStyle={styles.summaryCard}
+          summaryValueStyle={styles.summaryValue}
+          summaryLabelStyle={styles.summaryLabel}
+        />
 
         {/* List of Cards and Perks */}
         <View style={styles.cardsPerksContainer}>
           <Text style={styles.sectionTitle}>Your Cards & Perks</Text>
           {userCardsWithPerks.length > 0 ? (
-            userCardsWithPerks.map(({ card, perks }) => {
-              // Calculate total value saved for this specific card
-              const totalValueSavedForCard = perks.reduce((sum, perk) => {
-                return perk.status === 'redeemed' ? sum + perk.value : sum;
-              }, 0);
-
-              return (
-                <View key={card.id} style={styles.cardDetailItem}>
-                  <View style={styles.cardHeaderContainer}>                   
-                    <Text style={styles.cardName}>{card.name}</Text>
-                    <Text style={styles.valueSavedText}>Value Saved: ${totalValueSavedForCard}</Text>
-                  </View>
-                  {perks.map((perk) => (
-                    <PerkItem 
-                      key={perk.id} // Ensure key is on the component itself when mapping
-                      perk={perk} 
-                      cardId={card.id} 
-                      onTapPerk={handleTapPerk} 
-                      onLongPressPerk={handleLongPressPerk} 
-                    />
-                  ))}
-                </View>
-              );
-            })
+            userCardsWithPerks.map(({ card, perks }) => (
+              <UserCardItem
+                key={card.id}
+                card={card}
+                perks={perks}
+                onTapPerk={handleTapPerk}
+                onLongPressPerk={handleLongPressPerk}
+                cardDetailItemStyle={styles.cardDetailItem}
+                cardHeaderContainerStyle={styles.cardHeaderContainer}
+                cardNameStyle={styles.cardName}
+                valueSavedTextStyle={styles.valueSavedText}
+              />
+            ))
           ) : (
             <Text style={styles.noCardsSelectedText}>No cards selected or data not available.</Text>
           )}
@@ -427,27 +424,22 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333333',
-    marginBottom: 10,
   },
-  cardHeaderContainer: { // New style for card name and value saved
+  cardHeaderContainer: { 
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 10,
   },
-  valueSavedText: { // New style for the "Value Saved: $XX" text
+  valueSavedText: { 
     fontSize: 14,
-    fontWeight: '600', // Green color for positive reinforcement
+    fontWeight: '600',
+    color: '#28a745', 
   },
-  noCardsSelectedText: { // New style for message
+  noCardsSelectedText: { 
     textAlign: 'center',
     marginTop: 20,
     fontSize: 16,
     color: '#666666',
   },
-  // Styles moved to PerkItem.tsx:
-  // perkItemContainer, perkInteractionZone, perkContentRow, perkInfo, perkName, perkNameRedeemed,
-  // perkNamePending, streakText, perkValue, perkValueRedeemed, perkValuePending,
-  // redeemButton, redeemButtonDisabled, redeemButtonText,
-  // progressBarTrack, progressBarFill, progressBarFillPending
 }); 
