@@ -161,19 +161,21 @@ export default function HomeScreen() {
         if (cardData.card.id === cardId) {
           const updatedPerks = cardData.perks.map(p => {
             if (p.id === perkId) {
+              let updatedColdStreakCount = p.coldStreakCount;
               // Streak logic for monthly perks when marked as redeemed
               if (p.period === 'monthly' && newStatus === 'redeemed' && p.status !== 'redeemed' && !redeemedInCurrentCycle[p.id]) {
                 console.log(`Incrementing streak for ${p.name}`);
                 setRedeemedInCurrentCycle(prev => ({ ...prev, [p.id]: true }));
-                // Increment cumulative saved value
                 setCumulativeValueSavedPerCard(prev => ({...prev, [cardId]: (prev[cardId] || 0) + p.value }));
-                return { ...p, status: newStatus, streakCount: p.streakCount + 1 };
+                updatedColdStreakCount = 0; // Reset cold streak when hot streak increments
+                return { ...p, status: newStatus, streakCount: p.streakCount + 1, coldStreakCount: updatedColdStreakCount };
               } else if (newStatus === 'redeemed' && p.status !== 'redeemed') {
-                // For non-monthly perks or monthly perks already counted for streak in this cycle
-                // but changing from a non-redeemed to redeemed state
                 setCumulativeValueSavedPerCard(prev => ({...prev, [cardId]: (prev[cardId] || 0) + p.value }));
+                // If it becomes redeemed (even if not for a new monthly streak point), cold streak ends.
+                if (p.coldStreakCount > 0) updatedColdStreakCount = 0;
               }
-              return { ...p, status: newStatus };
+              // If status is cleared to available or pending, cold streak doesn't change here, only via processNewMonth
+              return { ...p, status: newStatus, coldStreakCount: updatedColdStreakCount };
             }
             return p;
           });

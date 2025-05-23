@@ -134,13 +134,15 @@ const PerkItem: React.FC<PerkItemProps> = ({ perk, cardId, onTapPerk, onLongPres
               <Text style={[styles.perkName, isRedeemed && styles.perkNameRedeemed, isPending && styles.perkNamePending]}>
                 {perk.name}
               </Text>
-              <StreakBadge streakCount={perk.streakCount} />
-              {perk.coldStreakCount > 0 && (
-                <View style={styles.badgeContainer}> {/* Re-use badge container style or make a new one */}
+              {/* Conditional rendering for streak badges */}
+              {perk.coldStreakCount > 0 ? (
+                <View style={styles.badgeContainer}>
                   <Text style={styles.coldStreakEmojiText}>🥶</Text>
                   <Text style={styles.streakCountText}>{perk.coldStreakCount}</Text>
                 </View>
-              )}
+              ) : perk.streakCount > 0 ? (
+                <StreakBadge streakCount={perk.streakCount} />
+              ) : null}
             </View>
             <Text style={[styles.perkValue, isRedeemed && styles.perkValueRedeemed, isPending && styles.perkValuePending]}>
               (${perk.value} / {perk.period})
