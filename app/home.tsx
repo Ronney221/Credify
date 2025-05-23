@@ -16,6 +16,15 @@ import { openPerkTarget } from './utils/linking'; // Import the new utility
 import UserCardItem from './components/home/UserCardItem';
 import SummaryDashboard from './components/home/SummaryDashboard';
 import LottieView from 'lottie-react-native'; // Import LottieView
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker'; // Import DateTimePicker
+
+// Import notification functions
+import {
+  requestPermissionsAsync,
+  scheduleMonthlyPerkResetNotifications,
+  scheduleCardRenewalReminder, // We'll use this later
+  cancelAllScheduledNotificationsAsync
+} from './utils/notifications';
 
 // Define PerkStatus type
 type PerkStatus = 'available' | 'pending' | 'redeemed';
@@ -84,6 +93,10 @@ export default function HomeScreen() {
   // State for celebration animation
   const [showCelebration, setShowCelebration] = useState(false);
 
+  // State for DEV date picker
+  const [showDatePickerForDev, setShowDatePickerForDev] = useState(false);
+  const [devSelectedDate, setDevSelectedDate] = useState<Date>(new Date());
+
   useFocusEffect(
     useCallback(() => {
       StatusBar.setBarStyle('dark-content');
@@ -91,6 +104,9 @@ export default function HomeScreen() {
         StatusBar.setBackgroundColor('transparent');
         StatusBar.setTranslucent(true);
       }
+      // Initial notification setup when screen comes into focus
+      // Or you might prefer this in a top-level useEffect once on app load
+      setupNotifications(); 
     }, [])
   );
 
@@ -143,6 +159,48 @@ export default function HomeScreen() {
     }
 
   }, [userCardsWithPerks]); // Only re-run if userCardsWithPerks change
+
+  // Function to set up notifications
+  const setupNotifications = async () => {
+    const hasPermission = await requestPermissionsAsync();
+    if (!hasPermission) {
+      Alert.alert(
+        "Permissions Required",
+        "Please enable notifications in settings to receive reminders.",
+      );
+      return;
+    }
+
+    console.log("Setting up notifications...");
+    await cancelAllScheduledNotificationsAsync(); // Clear old ones
+    await scheduleMonthlyPerkResetNotifications();
+    console.log("Monthly perk reset notifications scheduled.");
+
+    // TODO: Schedule card renewal reminders
+    // This requires parsing params.renewalDates and iterating through them
+    if (params.renewalDates && params.selectedCardIds) {
+      try {
+        const renewalDatesMap = JSON.parse(params.renewalDates);
+        const cardIds = params.selectedCardIds.split(',');
+        const cards = allCards.filter(c => cardIds.includes(c.id));
+
+        for (const card of cards) {
+          if (renewalDatesMap[card.id]) {
+            const renewalDate = new Date(renewalDatesMap[card.id]);
+            // Ensure it's a valid date and in the future before scheduling
+            if (!isNaN(renewalDate.getTime()) && renewalDate > new Date()) {
+              console.log(`Scheduling renewal for ${card.name} on ${renewalDate.toLocaleDateString()}`);
+              await scheduleCardRenewalReminder(card.name, renewalDate, 7); // 7 days before
+              // Potentially schedule another one, e.g., 3 days before, if desired
+            }
+          }
+        }
+        console.log("Card renewal notifications scheduled (if any applicable).");
+      } catch (error) {
+        console.error("Error parsing renewal dates or scheduling card reminders:", error);
+      }
+    }
+  };
 
   // Configuration for multi-choice perks
   const multiChoicePerksConfig: Record<string, Array<{ label: string; targetPerkName: string }>> = {
@@ -267,39 +325,50 @@ export default function HomeScreen() {
     );
   };
 
+  // DEV Date Picker Handler
+  const handleDevDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    setShowDatePickerForDev(false); // Hide picker regardless of action
+    if (event.type === 'set' && selectedDate) {
+      setDevSelectedDate(selectedDate);
+      console.log(`DEV: Date selected: ${selectedDate.toLocaleDateString()}`);
+      // Call processNewMonth with the selected date to simulate that month
+      processNewMonth(selectedDate); 
+    }
+  };
+
   // Placeholder for a function that would be called at the start of a new month
-  const processNewMonth = (forceNextMonthForTesting = false) => {
-    let newCycleIdentifier_Year = new Date().getFullYear();
-    let newCycleIdentifier_Month = new Date().getMonth();
+  const processNewMonth = (forcedDate?: Date) => {
+    let newCycleIdentifier_Year: number;
+    let newCycleIdentifier_Month: number;
 
-    if (forceNextMonthForTesting) {
-      // Parse currentCycleIdentifier to advance it
-      const [yearStr, monthStr] = currentCycleIdentifier.split('-');
-      let year = parseInt(yearStr, 10);
-      let month = parseInt(monthStr, 10); // 0-11 for months
-
-      month += 1;
-      if (month > 11) { // Month is 0-indexed (0 for Jan, 11 for Dec)
-        month = 0;
-        year += 1;
-      }
-      newCycleIdentifier_Year = year;
-      newCycleIdentifier_Month = month;
-      console.log(`DEV: Forcing next month to: ${year}-${month}`);
+    if (forcedDate) {
+      newCycleIdentifier_Year = forcedDate.getFullYear();
+      newCycleIdentifier_Month = forcedDate.getMonth(); // 0-11 for months
+      console.log(`DEV: Forcing date to: ${forcedDate.toLocaleDateString()}`);
+    } else {
+      // This case would be for actual, automatic month change detection in production
+      // For now, it's primarily driven by the DEV button with a forcedDate
+      newCycleIdentifier_Year = new Date().getFullYear();
+      newCycleIdentifier_Month = new Date().getMonth();
     }
     
     const newCycleIdentifier = `${newCycleIdentifier_Year}-${newCycleIdentifier_Month}`;
 
-    if (newCycleIdentifier !== currentCycleIdentifier || forceNextMonthForTesting) {
+    // Only proceed if the cycle is genuinely different or forced by DEV tool
+    if (newCycleIdentifier !== currentCycleIdentifier || forcedDate) {
       console.log(`Processing month change! Old cycle: ${currentCycleIdentifier}, New cycle: ${newCycleIdentifier}`);
       
       const [prevYearStr, prevMonthStr] = currentCycleIdentifier.split('-');
       const prevYear = parseInt(prevYearStr, 10);
       const prevMonth = parseInt(prevMonthStr, 10);
 
-      const hasAYearPassed = (newCycleIdentifier_Year * 12 + newCycleIdentifier_Month) >= (prevYear * 12 + prevMonth + 12);
-      if (forceNextMonthForTesting && hasAYearPassed) {
-        console.log("DEV: A conceptual year has passed due to forced month changes.");
+      // Determine if a conceptual year has passed for yearly perk resets
+      // This is true if forcedDate makes new cycle >= 12 months after previous cycle identifier
+      const conceptualMonthsPassed = (newCycleIdentifier_Year * 12 + newCycleIdentifier_Month) - (prevYear * 12 + prevMonth);
+      const hasAYearPassed = forcedDate ? conceptualMonthsPassed >= 12 : false; // Only relevant if forced
+
+      if (forcedDate && hasAYearPassed) {
+        console.log("DEV: A conceptual year (or more) has passed due to forced date change.");
       }
 
       setUserCardsWithPerks(currentData => 
@@ -319,7 +388,7 @@ export default function HomeScreen() {
                 newColdStreakCount = 0; // Reset cold streak if redeemed
               }
               newStatus = 'available';
-            } else if (p.period === 'yearly' && forceNextMonthForTesting && hasAYearPassed) {
+            } else if (p.period === 'yearly' && forcedDate && hasAYearPassed) {
               console.log(`DEV: Resetting yearly perk ${p.name} due to forced year passage.`);
               newStatus = 'available';
               newStreakCount = 0; 
@@ -331,8 +400,8 @@ export default function HomeScreen() {
       );
       setCurrentCycleIdentifier(newCycleIdentifier);
       setRedeemedInCurrentCycle({}); // Reset the tracker for the new cycle
-      Alert.alert("New Month!", "Monthly perks have been reset.");
-    } else {
+      Alert.alert("Month Processed!", `Simulating for: ${newCycleIdentifier_Year}-${newCycleIdentifier_Month + 1}. Monthly perks updated.`);
+    } else if (!forcedDate) { // Only show 'still same month' if not a dev-forced action
       Alert.alert("Still Same Month", "Monthly reset can only occur once a new calendar month begins.");
     }
   };
@@ -345,10 +414,20 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitle}>Dashboard</Text>
 
-        {/* Temporary button to simulate month end - FOR DEV ONLY */}
-        <TouchableOpacity onPress={() => processNewMonth(true)} style={{backgroundColor: '#ddd', padding: 10, marginVertical:10, alignItems: 'center'}}>
-          <Text>DEV: Force Next Month & Reset</Text>
+        {/* DEV Button to set date manually */}
+        <TouchableOpacity onPress={() => setShowDatePickerForDev(true)} style={styles.devButton}>
+          <Text>DEV: Set Current Date & Process Month</Text>
         </TouchableOpacity>
+
+        {showDatePickerForDev && (
+          <DateTimePicker
+            testID="dateTimePickerForDev"
+            value={devSelectedDate}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handleDevDateChange}
+          />
+        )}
 
         <SummaryDashboard 
           monthlyCreditsRedeemed={monthlyCreditsRedeemed}
@@ -495,5 +574,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     zIndex: 1000, // Ensure it's on top
     pointerEvents: 'none', // Allow taps to go through to elements behind it
+  },
+  devButton: { // Style for the DEV button
+    backgroundColor: '#ffc107', // A distinct color for DEV tools
+    padding: 10,
+    marginVertical: 10,
+    alignItems: 'center',
+    borderRadius: 5,
   },
 }); 
