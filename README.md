@@ -1,6 +1,9 @@
 # Credify: Credit Card Perk Optimizer & Tracker 🚀
 
 Credify is a mobile application designed to help you unlock the full potential of your credit card rewards and benefits. Stop leaving money on the table and start maximizing your savings with intelligent perk tracking, timely reminders, and a gamified redemption experience!
+![1-portrait](https://github.com/user-attachments/assets/3c13b338-c85f-43d9-856f-0c534a8f9ada)
+
+![2-left](https://github.com/user-attachments/assets/f036e115-bde7-4aa7-8f79-3636cbf191d3)
 
 ## What is Credify? 🤔
 
