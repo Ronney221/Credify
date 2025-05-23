@@ -21,6 +21,7 @@ type PerkStatus = 'available' | 'pending' | 'redeemed';
 export interface CardPerk extends Benefit {
   cardId: string;
   status: PerkStatus;
+  streakCount: number; // Added for streak tracking
 }
 
 // Placeholder for fetching/calculating user's selected cards and their perks
@@ -45,6 +46,7 @@ const getSelectedUserCardsWithPerks = (
         ...benefit,
         cardId: card.id,
         status: 'available' as PerkStatus,
+        streakCount: 0, // Initialize streak count
       })),
     }));
 };
@@ -63,6 +65,14 @@ export default function HomeScreen() {
   const [yearlyCreditsPossible, setYearlyCreditsPossible] = useState(0);
   const [yearlyCreditsRedeemed, setYearlyCreditsRedeemed] = useState(0);
   // const [totalValueUsed, setTotalValueUsed] = useState(0); // We can perhaps derive this or keep it if it means something different
+
+  // State for managing the current cycle for streaks/reset
+  // Represents month and year, e.g., "2023-10" (October 2023)
+  const [currentCycleIdentifier, setCurrentCycleIdentifier] = useState<string>(
+    `${new Date().getFullYear()}-${new Date().getMonth()}`
+  );
+  // Stores which monthly perks have been redeemed *within the current cycle* to avoid double-counting streaks
+  const [redeemedInCurrentCycle, setRedeemedInCurrentCycle] = useState<Record<string, boolean>>({});
 
   useFocusEffect(
     useCallback(() => {
@@ -125,7 +135,31 @@ export default function HomeScreen() {
     // Add other flexible perks here if needed
   };
 
-  const handleRedeemPerk = async (cardId: string, perkId: string, perkToOpen: CardPerk) => {
+  const setPerkStatus = (cardId: string, perkId: string, newStatus: PerkStatus) => {
+    setUserCardsWithPerks(currentCardsData =>
+      currentCardsData.map(cardData => {
+        if (cardData.card.id === cardId) {
+          const updatedPerks = cardData.perks.map(p => {
+            if (p.id === perkId) {
+              // Streak logic for monthly perks when marked as redeemed
+              if (p.period === 'monthly' && newStatus === 'redeemed' && p.status !== 'redeemed' && !redeemedInCurrentCycle[p.id]) {
+                console.log(`Incrementing streak for ${p.name}`);
+                setRedeemedInCurrentCycle(prev => ({ ...prev, [p.id]: true }));
+                return { ...p, status: newStatus, streakCount: p.streakCount + 1 };
+              }              
+              return { ...p, status: newStatus };
+            }
+            return p;
+          });
+          return { ...cardData, perks: updatedPerks };
+        }
+        return cardData;
+      })
+    );
+  };
+
+  const handleTapPerk = async (cardId: string, perkId: string, perkToOpen: CardPerk) => {
+    // This function will now primarily handle the "opening" or "choice" logic
     const choices = multiChoicePerksConfig[perkToOpen.name];
 
     let successfullyOpened = false;
@@ -159,20 +193,13 @@ export default function HomeScreen() {
     }
 
     if (successfullyOpened) {
-      setUserCardsWithPerks(currentCards => 
-        currentCards.map(cardData => {
-          if (cardData.card.id === cardId) {
-            return {
-              ...cardData,
-              perks: cardData.perks.map(perk => 
-                perk.id === perkId ? { ...perk, status: 'redeemed' as PerkStatus } : perk
-              ),
-            };
-          }
-          return cardData;
-        })
-      );
-      // TODO: Update totalValueUsed based on perkToOpen.value
+      // Instead of directly setting here, let the main effect handle it if openPerkTarget implies redemption.
+      // For now, openPerkTarget itself sets it to redeemed upon successful linking. If that changes, revisit.
+      // The todo.md says: "On successful Linking.openURL, set perk.status = 'redeemed'"
+      // This is currently handled if `successfullyOpened` is true and the logic inside the if block runs.
+      // Let's explicitly call setPerkStatus if the action was to redeem via opening a link.
+      setPerkStatus(cardId, perkId, 'redeemed'); 
+
       console.log(`Perk ${perkId} (${actualPerkNameForLinking}) for card ${cardId} marked as redeemed after successful link opening.`);
     } else {
       if (choices && !successfullyOpened) { // only log if it was a multi-choice and nothing was chosen/opened
@@ -183,6 +210,63 @@ export default function HomeScreen() {
     }
   };
 
+  const handleLongPressPerk = (cardId: string, perkId: string, currentPerk: CardPerk) => {
+    Alert.alert(
+      `Manage Perk: ${currentPerk.name}`,
+      "Set perk status:",
+      [
+        {
+          text: "Mark as Redeemed",
+          onPress: () => setPerkStatus(cardId, perkId, 'redeemed'),
+          // Optional: Add style if currentPerk.status === 'redeemed'
+        },
+        {
+          text: "Mark as Pending",
+          onPress: () => setPerkStatus(cardId, perkId, 'pending'),
+          // Optional: Add style if currentPerk.status === 'pending'
+        },
+        {
+          text: "Clear Status (Set to Available)",
+          onPress: () => setPerkStatus(cardId, perkId, 'available'),
+          // Optional: Add style if currentPerk.status === 'available'
+        },
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  // Placeholder for a function that would be called at the start of a new month
+  const processNewMonth = () => {
+    const today = new Date();
+    const newCycleIdentifier = `${today.getFullYear()}-${today.getMonth()}`;
+
+    if (newCycleIdentifier !== currentCycleIdentifier) {
+      console.log(`New month detected! Old cycle: ${currentCycleIdentifier}, New cycle: ${newCycleIdentifier}`);
+      setUserCardsWithPerks(currentData => 
+        currentData.map(cardData => ({
+          ...cardData,
+          perks: cardData.perks.map(p => {
+            if (p.period === 'monthly') {
+              // Streaks were already incremented when set to 'redeemed' in the previous cycle
+              // So, just reset status here.
+              return { ...p, status: 'available' as PerkStatus };
+            }
+            return p;
+          })
+        }))
+      );
+      setCurrentCycleIdentifier(newCycleIdentifier);
+      setRedeemedInCurrentCycle({}); // Reset the tracker for the new cycle
+      Alert.alert("New Month!", "Monthly perks have been reset.");
+    } else {
+      Alert.alert("Still Same Month", "Monthly reset can only occur once a new calendar month begins.");
+    }
+  };
+
   // TODO: Implement functions to calculate summary data (monthly, yearly credits, value used)
 
   return (
@@ -190,6 +274,11 @@ export default function HomeScreen() {
       {/* <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} /> */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitle}>Dashboard</Text>
+
+        {/* Temporary button to simulate month end - FOR DEV ONLY */}
+        <TouchableOpacity onPress={processNewMonth} style={{backgroundColor: '#ddd', padding: 10, marginVertical:10, alignItems: 'center'}}>
+          <Text>DEV: Simulate New Month & Reset</Text>
+        </TouchableOpacity>
 
         {/* Summary Cards Placeholder */}
         <View style={styles.summaryContainer}>
@@ -218,39 +307,70 @@ export default function HomeScreen() {
         <View style={styles.cardsPerksContainer}>
           <Text style={styles.sectionTitle}>Your Cards & Perks</Text>
           {userCardsWithPerks.length > 0 ? (
-            userCardsWithPerks.map(({ card, perks }) => (
-              <View key={card.id} style={styles.cardDetailItem}>
-                <Text style={styles.cardName}>{card.name}</Text>
-                {perks.map((perk) => {
-                  const isRedeemed = perk.status === 'redeemed';
-                  return (
-                    <View key={perk.id} style={styles.perkItemContainer}> 
-                      {/* Content: Info + Button. Was perkContentOverlay */}
-                      <View style={styles.perkContentRow}>
-                        <View style={styles.perkInfo}>
-                          <Text style={[styles.perkName, isRedeemed && styles.perkNameRedeemed]}>{perk.name}</Text>
-                          <Text style={[styles.perkValue, isRedeemed && styles.perkValueRedeemed]}>(${perk.value} / {perk.period})</Text>
-                        </View>
+            userCardsWithPerks.map(({ card, perks }) => {
+              // Calculate total value saved for this specific card
+              const totalValueSavedForCard = perks.reduce((sum, perk) => {
+                return perk.status === 'redeemed' ? sum + perk.value : sum;
+              }, 0);
+
+              return (
+                <View key={card.id} style={styles.cardDetailItem}>
+                  <View style={styles.cardHeaderContainer}>                   
+                    <Text style={styles.cardName}>{card.name}</Text>
+                    <Text style={styles.valueSavedText}>Value Saved: ${totalValueSavedForCard}</Text>
+                  </View>
+                  {perks.map((perk) => {
+                    const isRedeemed = perk.status === 'redeemed';
+                    const isPending = perk.status === 'pending';
+                    return (
+                      <View key={perk.id} style={styles.perkItemContainer}>
                         <TouchableOpacity 
-                          style={[styles.redeemButton, isRedeemed && styles.redeemButtonDisabled]}
-                          onPress={() => handleRedeemPerk(card.id, perk.id, perk)} // Pass the full perk object
-                          disabled={isRedeemed}
+                          onPress={() => handleTapPerk(card.id, perk.id, perk)} 
+                          onLongPress={() => handleLongPressPerk(card.id, perk.id, perk)}
+                          delayLongPress={300} 
+                          style={styles.perkInteractionZone} 
                         >
-                          <Text style={styles.redeemButtonText}>
-                            {isRedeemed ? 'View' : 'Redeem'} {/* Changed text for redeemed state */}
-                          </Text>
+                          {/* Content: Info + Button. */}
+                          <View style={styles.perkContentRow}>
+                            <View style={styles.perkInfo}>
+                              <Text style={[styles.perkName, isRedeemed && styles.perkNameRedeemed, isPending && styles.perkNamePending]}>
+                                {perk.name} 
+                                {perk.streakCount > 0 && <Text style={styles.streakText}>🔥{perk.streakCount}</Text>}
+                              </Text>
+                              <Text style={[styles.perkValue, isRedeemed && styles.perkValueRedeemed, isPending && styles.perkValuePending]}>(${perk.value} / {perk.period})</Text>
+                            </View>
+                            <TouchableOpacity 
+                              style={[
+                                styles.redeemButton,
+                                (isRedeemed || isPending) && styles.redeemButtonDisabled, // Disable for redeemed or pending for tap action
+                                // Optionally, add a specific style for pending if redeemButtonDisabled is too generic
+                              ]}
+                              onPress={() => handleTapPerk(card.id, perk.id, perk)} 
+                              onLongPress={() => handleLongPressPerk(card.id, perk.id, perk)} 
+                              disabled={isRedeemed || isPending} // Disable tap if redeemed or pending
+                            >
+                              <Text style={styles.redeemButtonText}>                                
+                                {isRedeemed ? 'View' : (isPending ? 'Pending' : 'Redeem')}
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                          
+                          {/* New Progress Bar section */}
+                          <View style={styles.progressBarTrack}>
+                            <View style={[
+                              styles.progressBarFill,
+                              isRedeemed && { width: '100%' }, // Full width if redeemed
+                              isPending && styles.progressBarFillPending, // Pending style if pending (could also be partial width)
+                              isPending && { width: '50%' } // Example: 50% width for pending, adjust as needed
+                            ]} />
+                          </View>
                         </TouchableOpacity>
                       </View>
-                      
-                      {/* New Progress Bar section */}
-                      <View style={styles.progressBarTrack}>
-                        <View style={[styles.progressBarFill, { width: isRedeemed ? '100%' : '0%' }]} />
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            ))
+                    );
+                  })}
+                </View>
+              );
+            })
           ) : (
             <Text style={styles.noCardsSelectedText}>No cards selected or data not available.</Text>
           )}
@@ -330,6 +450,16 @@ const styles = StyleSheet.create({
     color: '#333333',
     marginBottom: 10,
   },
+  cardHeaderContainer: { // New style for card name and value saved
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  valueSavedText: { // New style for the "Value Saved: $XX" text
+    fontSize: 14,
+    fontWeight: '600', // Green color for positive reinforcement
+  },
   perkItemContainer: { 
     borderRadius: 8,
     marginBottom: 10,
@@ -372,6 +502,16 @@ const styles = StyleSheet.create({
   },
   perkNameRedeemed: {
     color: '#155724', // Dark green text for redeemed state
+    textDecorationLine: 'line-through', // Optional: strike-through for redeemed
+  },
+  perkNamePending: { // New style for pending perk name
+    color: '#856404', // Dark yellow/brown for pending
+    fontStyle: 'italic',
+  },
+  streakText: { // New style for streak display
+    fontSize: 13,
+    color: '#ff9800', // Orange color for streak
+    marginLeft: 5,
   },
   perkValue: { // New style for value/period text
     fontSize: 13,
@@ -379,6 +519,11 @@ const styles = StyleSheet.create({
   },
   perkValueRedeemed: {
     color: '#155724',
+    textDecorationLine: 'line-through', // Optional: strike-through for redeemed
+  },
+  perkValuePending: { // New style for pending perk value
+    color: '#856404',
+    fontStyle: 'italic',
   },
   redeemButton: {
     backgroundColor: '#007bff', // Blue for redeem action button
@@ -412,5 +557,17 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#28a745', // Color of the filled part of the bar
     borderRadius: 4, // Match track's border radius
+  },
+  // Style for pending progress bar fill
+  progressBarFillPending: {
+    height: '100%',
+    backgroundColor: '#ffc107', // Yellow for pending status
+    borderRadius: 4,
+  },
+  perkInteractionZone: {
+    // This style can be used on the parent TouchableOpacity if you want the whole row to be long-pressable
+    // For example, you might move the onPress/onLongPress from the inner redeemButton to this parent TouchableOpacity
+    // and then the perkContentRow would be inside it.
+    // If you keep them separate, ensure styling allows both to be pressed easily.
   },
 }); 
