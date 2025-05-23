@@ -1,7 +1,8 @@
+import { StatusBar } from 'expo-status-bar';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
+import { Platform, View } from 'react-native';
+import Constants from 'expo-constants';
 
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -16,7 +17,15 @@ export default function TabLayout() {
 
   return (
     <>
-      <StatusBar style={statusBarStyle} backgroundColor={statusBarBackgroundColor} translucent={false} />
+      <StatusBar style={statusBarStyle} backgroundColor="transparent" translucent />
+      {Platform.OS === 'ios' && (
+        <View
+          style={{
+            height: Constants.statusBarHeight,
+            backgroundColor: statusBarBackgroundColor,
+          }}
+        />
+      )}
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,

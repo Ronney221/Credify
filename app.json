@@ -20,7 +20,9 @@
           "grubhub",
           "resy"
         ],
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+         "UIViewControllerBasedStatusBarAppearance": false,
+         "UIStatusBarStyle": "UIStatusBarStyleDarkContent"
       }
     },
     "android": {

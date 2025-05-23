@@ -29,6 +29,8 @@ export const Colors = {
     textOnAccent: '#FFFFFF',
     redeemButtonDefault: tintColorLight,
     redeemButtonDisabled: '#6c757d',
+    coldStreakBackground: '#e0f7fa', // A light cyan/blue
+    textOnColdStreakBackground: '#00796b', // A darker teal for text
   },
   dark: {
     text: '#FFFFFF',

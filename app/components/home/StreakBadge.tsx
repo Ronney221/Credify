@@ -4,9 +4,19 @@ import { Colors } from '../../constants/Colors'; // Uppercase filename
 
 interface StreakBadgeProps {
   streakCount: number;
+  coldStreakCount?: number; // Added to handle cold streaks
 }
 
-const StreakBadge: React.FC<StreakBadgeProps> = ({ streakCount }) => {
+const StreakBadge: React.FC<StreakBadgeProps> = ({ streakCount, coldStreakCount }) => {
+  if (coldStreakCount && coldStreakCount > 0) {
+    return (
+      <View style={[styles.badgeContainer, styles.badgeColdStreak]}>
+        <Text style={styles.emojiText}>🥶</Text>
+        <Text style={[styles.streakCountTextBase, styles.streakCountTextColdStreak]}>{coldStreakCount}</Text>
+      </View>
+    );
+  }
+
   if (streakCount <= 0) {
     return null;
   }
@@ -18,15 +28,16 @@ const StreakBadge: React.FC<StreakBadgeProps> = ({ streakCount }) => {
   if (streakCount >= 12) {
     emoji = '🏆'; // Gold
     badgeStyle = styles.badgeGold;
-    textStyle = styles.streakCountTextGold; // Use specific text style for gold if needed
+    textStyle = styles.streakCountTextGold;
   } else if (streakCount >= 6) {
     emoji = '🥈'; // Silver
     badgeStyle = styles.badgeSilver;
+    // Assuming silver uses default text color or define streakCountTextSilver
   } else if (streakCount >= 3) {
     emoji = '🥉'; // Bronze
     badgeStyle = styles.badgeBronze;
+    // Assuming bronze uses default text color or define streakCountTextBronze
   }
-  // For streaks 1-2, it will use default fire emoji and default badge styles
 
   return (
     <View style={[styles.badgeContainer, badgeStyle]}>
@@ -57,11 +68,12 @@ const styles = StyleSheet.create({
   badgeGold: {
     backgroundColor: Colors.light.streakGold,
   },
+  badgeColdStreak: { // Style for cold streak badge
+    backgroundColor: Colors.light.coldStreakBackground, // Define this color in Colors.ts
+  },
   emojiText: {
     fontSize: 12,
     marginRight: 3,
-    // Consider if emoji color needs to contrast with badge background
-    // e.g. for dark badges, emoji might need to be light
   },
   streakCountTextBase: { // Base style for all streak counts
     fontSize: 12,
@@ -70,11 +82,12 @@ const styles = StyleSheet.create({
   streakCountTextDefault: { // For fire emoji text
     color: Colors.light.textOnPrimary, // Assuming warning bg is dark enough for white text
   },
-  streakCountTextGold: { // Example: if gold badge needs different text color
+  streakCountTextGold: {
     color: Colors.light.text, // Darker text for light gold background
   },
-  // Bronze and Silver will implicity use streakCountTextDefault unless overridden
-  // Or we can define specific ones: streakCountTextBronze, streakCountTextSilver
+  streakCountTextColdStreak: { // Style for cold streak count text
+    color: Colors.light.textOnColdStreakBackground, // Define this color in Colors.ts
+  },
 });
 
 export default StreakBadge; 

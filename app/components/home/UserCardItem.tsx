@@ -71,6 +71,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: Colors.light.text, // Use uppercase Colors
+    flexShrink: 1, // Allow card name to shrink
+    marginRight: 8, // Add some space between card name and value saved
   },
   valueSavedText: {
     fontSize: 14,

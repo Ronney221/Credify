@@ -426,7 +426,7 @@ export default function HomeScreen() {
   // TODO: Implement functions to calculate summary data (monthly, yearly credits, value used)
 
   return (
-    <SafeAreaView style={styles.container} edges={[]}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} /> */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitle}>Dashboard</Text>

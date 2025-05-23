@@ -43,6 +43,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: Colors.light.text, // Use themed text color
+    flexShrink: 1, // Allow perk name to shrink to prevent overlap
   },
   perkNameRedeemed: {
     color: Colors.light.accent, 
@@ -143,15 +144,7 @@ const PerkItem: React.FC<PerkItemProps> = ({ perk, cardId, onTapPerk, onLongPres
               <Text style={[styles.perkName, isRedeemed && styles.perkNameRedeemed, isPending && styles.perkNamePending]}>
                 {perk.name}
               </Text>
-              {/* Conditional rendering for streak badges */}
-              {perk.coldStreakCount > 0 ? (
-                <View style={styles.badgeContainer}>
-                  <Text style={styles.coldStreakEmojiText}>🥶</Text>
-                  <Text style={styles.streakCountText}>{perk.coldStreakCount}</Text>
-                </View>
-              ) : perk.streakCount > 0 ? (
-                <StreakBadge streakCount={perk.streakCount} />
-              ) : null}
+              <StreakBadge streakCount={perk.streakCount} coldStreakCount={perk.coldStreakCount} />
             </View>
             <Text style={[styles.perkValue, isRedeemed && styles.perkValueRedeemed, isPending && styles.perkValuePending]}>
               (${perk.value} / {perk.period})
