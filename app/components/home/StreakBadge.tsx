@@ -1,68 +1,80 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Colors } from '../../constants/Colors'; // Uppercase filename
 
 interface StreakBadgeProps {
   streakCount: number;
 }
 
+const StreakBadge: React.FC<StreakBadgeProps> = ({ streakCount }) => {
+  if (streakCount <= 0) {
+    return null;
+  }
+
+  let emoji = '🔥';
+  let badgeStyle = styles.badgeDefault;
+  let textStyle = styles.streakCountTextDefault;
+
+  if (streakCount >= 12) {
+    emoji = '🏆'; // Gold
+    badgeStyle = styles.badgeGold;
+    textStyle = styles.streakCountTextGold; // Use specific text style for gold if needed
+  } else if (streakCount >= 6) {
+    emoji = '🥈'; // Silver
+    badgeStyle = styles.badgeSilver;
+  } else if (streakCount >= 3) {
+    emoji = '🥉'; // Bronze
+    badgeStyle = styles.badgeBronze;
+  }
+  // For streaks 1-2, it will use default fire emoji and default badge styles
+
+  return (
+    <View style={[styles.badgeContainer, badgeStyle]}>
+      <Text style={styles.emojiText}>{emoji}</Text>
+      <Text style={[styles.streakCountTextBase, textStyle]}>{streakCount}</Text>
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
-  badgeContainer: {
+  badgeContainer: { // Base container for all badges
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 6, // Space between perk name and badge
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0', // A light background for the badge itself
+    marginLeft: 6, // Space from perk name
+  },
+  badgeDefault: { // For fire emoji (1-2 streaks)
+    backgroundColor: Colors.light.warning, // Using warning color (orange/yellow) for fire
+  },
+  badgeBronze: {
+    backgroundColor: Colors.light.streakBronze,
+  },
+  badgeSilver: {
+    backgroundColor: Colors.light.streakSilver,
+  },
+  badgeGold: {
+    backgroundColor: Colors.light.streakGold,
   },
   emojiText: {
     fontSize: 12,
     marginRight: 3,
+    // Consider if emoji color needs to contrast with badge background
+    // e.g. for dark badges, emoji might need to be light
   },
-  streakCountText: {
+  streakCountTextBase: { // Base style for all streak counts
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#333',
   },
-  // Specific styles for milestone colors if needed, e.g., gold for 12 months
-  milestone12Badge: {
-    backgroundColor: '#ffd700', // Gold-ish for 12 months
+  streakCountTextDefault: { // For fire emoji text
+    color: Colors.light.textOnPrimary, // Assuming warning bg is dark enough for white text
   },
-  milestone6Badge: {
-    backgroundColor: '#c0c0c0', // Silver-ish for 6 months
+  streakCountTextGold: { // Example: if gold badge needs different text color
+    color: Colors.light.text, // Darker text for light gold background
   },
-  milestone3Badge: {
-    backgroundColor: '#cd7f32', // Bronze-ish for 3 months
-  },
+  // Bronze and Silver will implicity use streakCountTextDefault unless overridden
+  // Or we can define specific ones: streakCountTextBronze, streakCountTextSilver
 });
-
-const StreakBadge: React.FC<StreakBadgeProps> = ({ streakCount }) => {
-  if (streakCount <= 0) {
-    return null; // Don't render anything if no streak
-  }
-
-  let emoji = '🔥'; // Default fire emoji
-  let badgeStyle = styles.badgeContainer;
-
-  if (streakCount >= 12) {
-    emoji = '🏆'; // Gold Trophy for 12+ months
-    // badgeStyle = [styles.badgeContainer, styles.milestone12Badge]; // Optional: different background for milestones
-  } else if (streakCount >= 6) {
-    emoji = '🥈'; // Silver Medal/Trophy for 6-11 months (Using a silver medal emoji as a placeholder)
-    // badgeStyle = [styles.badgeContainer, styles.milestone6Badge];
-  } else if (streakCount >= 3) {
-    emoji = '🥉'; // Bronze Medal/Trophy for 3-5 months
-    // badgeStyle = [styles.badgeContainer, styles.milestone3Badge];
-  }
-  // To use different background colors per milestone, uncomment the badgeStyle assignments above
-  // and ensure they are applied to the <View> below.
-
-  return (
-    <View style={badgeStyle}>
-      <Text style={styles.emojiText}>{emoji}</Text>
-      <Text style={styles.streakCountText}>{streakCount}</Text>
-    </View>
-  );
-};
 
 export default StreakBadge; 

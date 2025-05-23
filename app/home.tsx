@@ -17,6 +17,7 @@ import UserCardItem from './components/home/UserCardItem';
 import SummaryDashboard from './components/home/SummaryDashboard';
 import LottieView from 'lottie-react-native'; // Import LottieView
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker'; // Import DateTimePicker
+import { Colors } from '../constants/Colors'; // Reverted to uppercase filename in import
 
 // Import notification functions
 import {
@@ -416,7 +417,7 @@ export default function HomeScreen() {
 
         {/* DEV Button to set date manually */}
         <TouchableOpacity onPress={() => setShowDatePickerForDev(true)} style={styles.devButton}>
-          <Text>DEV: Set Current Date & Process Month</Text>
+          <Text style={styles.devButtonText}>DEV: Set Current Date & Process Month</Text>
         </TouchableOpacity>
 
         {showDatePickerForDev && (
@@ -483,7 +484,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f2f5', // Light gray background for dashboard
+    backgroundColor: Colors.light.background, 
   },
   scrollContent: {
     padding: 16,
@@ -491,9 +492,20 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1c1c1e',
+    color: Colors.light.text, 
     marginBottom: 20,
     textAlign: 'center',
+  },
+  devButton: { 
+    backgroundColor: Colors.light.tint, // Using tint as a placeholder for warning
+    padding: 10,
+    marginVertical: 10,
+    alignItems: 'center',
+    borderRadius: 5,
+  },
+  devButtonText: { 
+    color: Colors.light.background, // Text on tint, assuming background is light for contrast
+    fontWeight: '500',
   },
   summaryContainer: {
     flexDirection: 'row',
@@ -501,13 +513,13 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
   summaryCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: Colors.light.background, // Using background for cards
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
-    flex: 1, // Distribute space equally
+    flex: 1, 
     marginHorizontal: 5,
-    shadowColor: '#000',
+    shadowColor: Colors.light.text, 
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -516,12 +528,12 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#007aff',
+    color: Colors.light.tint, // Using tint for primary emphasis
     marginBottom: 5,
   },
   summaryLabel: {
     fontSize: 13,
-    color: '#666666',
+    color: Colors.light.text, // Using text for labels (could be less emphasized later)
     textAlign: 'center',
   },
   cardsPerksContainer: {
@@ -530,15 +542,15 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#1c1c1e',
+    color: Colors.light.text, 
     marginBottom: 15,
   },
   cardDetailItem: {
-    backgroundColor: '#ffffff',
+    backgroundColor: Colors.light.background, // Using background for card items
     borderRadius: 10,
     padding: 15,
     marginBottom: 15,
-    shadowColor: '#000',
+    shadowColor: Colors.light.text, 
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 3,
@@ -547,7 +559,7 @@ const styles = StyleSheet.create({
   cardName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333333',
+    color: Colors.light.text, 
   },
   cardHeaderContainer: { 
     flexDirection: 'row',
@@ -558,28 +570,21 @@ const styles = StyleSheet.create({
   valueSavedText: { 
     fontSize: 14,
     fontWeight: '600',
-    color: '#28a745', 
+    color: Colors.light.tint, // Using tint for accent color
   },
   noCardsSelectedText: { 
     textAlign: 'center',
     marginTop: 20,
     fontSize: 16,
-    color: '#666666',
+    color: Colors.light.text, // Using text
   },
-  lottieCelebration: { // Style for the Lottie animation overlay
+  lottieCelebration: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 1000, // Ensure it's on top
-    pointerEvents: 'none', // Allow taps to go through to elements behind it
-  },
-  devButton: { // Style for the DEV button
-    backgroundColor: '#ffc107', // A distinct color for DEV tools
-    padding: 10,
-    marginVertical: 10,
-    alignItems: 'center',
-    borderRadius: 5,
+    zIndex: 1000,
+    pointerEvents: 'none',
   },
 }); 

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { CardPerk } from '../../home'; // Adjust path as needed, assuming home.tsx exports CardPerk
 import StreakBadge from './StreakBadge'; // Import StreakBadge
+import { Colors } from '../../constants/Colors'; // Reverted to uppercase filename
 
 interface PerkItemProps {
   perk: CardPerk;
@@ -20,6 +21,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 10,
     padding: 12,
+    backgroundColor: Colors.light.cardBackground, // Use themed card background
   },
   perkInteractionZone: {},
   perkContentRow: {
@@ -40,14 +42,14 @@ const styles = StyleSheet.create({
   perkName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#343a40',
+    color: Colors.light.text, // Use themed text color
   },
   perkNameRedeemed: {
-    color: '#155724',
+    color: Colors.light.accent, 
     textDecorationLine: 'line-through',
   },
   perkNamePending: {
-    color: '#856404',
+    color: Colors.light.warning, 
     fontStyle: 'italic',
   },
   streakText: {
@@ -58,40 +60,39 @@ const styles = StyleSheet.create({
   },
   perkValue: {
     fontSize: 13,
-    color: '#495057',
+    color: Colors.light.textSecondary, 
   },
   perkValueRedeemed: {
-    color: '#155724',
+    color: Colors.light.accent, 
     textDecorationLine: 'line-through',
   },
   perkValuePending: {
-    color: '#856404',
+    color: Colors.light.warning, 
     fontStyle: 'italic',
   },
   redeemButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: Colors.light.redeemButtonDefault, 
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 6,
     marginLeft: 10,
   },
   redeemButtonDisabled: {
-    backgroundColor: '#6c757d',
+    backgroundColor: Colors.light.redeemButtonDisabled, 
   },
   redeemButtonText: {
-    color: '#ffffff',
+    color: Colors.light.textOnPrimary, 
     fontSize: 14,
     fontWeight: '500',
   },
   progressBarTrack: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#e9ecef',
+    backgroundColor: Colors.light.progressBarTrack, 
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#28a745', // Green for redeemed
     borderRadius: 4,
   },
   progressBarFillPending: {
@@ -109,16 +110,24 @@ const styles = StyleSheet.create({
   },
   coldStreakEmojiText: { // For the cold streak emoji
     fontSize: 12, 
-    // marginRight: 3, // Can share margin with emojiText or have its own
+    color: Colors.light.coldStreakIcon, 
   },
   streakCountText: {
     fontSize: 12,
+    color: Colors.light.textSecondary, // Using textSecondary for streak count
   },
 });
 
 const PerkItem: React.FC<PerkItemProps> = ({ perk, cardId, onTapPerk, onLongPressPerk }) => {
   const isRedeemed = perk.status === 'redeemed';
   const isPending = perk.status === 'pending';
+
+  let progressBarBackgroundColor = Colors.light.progressBarTrack; 
+  if (isRedeemed) {
+    progressBarBackgroundColor = Colors.light.accent;
+  } else if (isPending) {
+    progressBarBackgroundColor = Colors.light.pending;
+  }
 
   return (
     <View style={styles.perkItemContainer}>
@@ -165,10 +174,11 @@ const PerkItem: React.FC<PerkItemProps> = ({ perk, cardId, onTapPerk, onLongPres
 
         <View style={styles.progressBarTrack}>
           <View style={[
-            styles.progressBarFill, // Base style (height, borderRadius)
-            isRedeemed && { width: '100%', backgroundColor: '#28a745' }, // Green for redeemed
-            isPending && { width: '50%', backgroundColor: '#ffc107' }, // Yellow for pending
-            (!isRedeemed && !isPending) && { width: '0%' } // Explicitly 0% if available
+            styles.progressBarFill,
+            { 
+              backgroundColor: progressBarBackgroundColor, 
+              width: isRedeemed ? '100%' : isPending ? '50%' : '0%'
+            }
           ]} />
         </View>
       </TouchableOpacity>
