@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Card, Benefit, allCards } from '../src/data/card-data'; // Assuming selected card IDs might be passed
 import { openPerkTarget } from './utils/linking'; // Import the new utility
+import PerkItem from './components/home/PerkItem'; // Import the new PerkItem component
 
 // Define PerkStatus type
 type PerkStatus = 'available' | 'pending' | 'redeemed';
@@ -240,12 +241,30 @@ export default function HomeScreen() {
   };
 
   // Placeholder for a function that would be called at the start of a new month
-  const processNewMonth = () => {
-    const today = new Date();
-    const newCycleIdentifier = `${today.getFullYear()}-${today.getMonth()}`;
+  const processNewMonth = (forceNextMonthForTesting = false) => {
+    let newCycleIdentifier_Year = new Date().getFullYear();
+    let newCycleIdentifier_Month = new Date().getMonth();
 
-    if (newCycleIdentifier !== currentCycleIdentifier) {
-      console.log(`New month detected! Old cycle: ${currentCycleIdentifier}, New cycle: ${newCycleIdentifier}`);
+    if (forceNextMonthForTesting) {
+      // Parse currentCycleIdentifier to advance it
+      const [yearStr, monthStr] = currentCycleIdentifier.split('-');
+      let year = parseInt(yearStr, 10);
+      let month = parseInt(monthStr, 10); // 0-11 for months
+
+      month += 1;
+      if (month > 11) { // Month is 0-indexed (0 for Jan, 11 for Dec)
+        month = 0;
+        year += 1;
+      }
+      newCycleIdentifier_Year = year;
+      newCycleIdentifier_Month = month;
+      console.log(`DEV: Forcing next month to: ${year}-${month}`);
+    }
+    
+    const newCycleIdentifier = `${newCycleIdentifier_Year}-${newCycleIdentifier_Month}`;
+
+    if (newCycleIdentifier !== currentCycleIdentifier || forceNextMonthForTesting) {
+      console.log(`Processing month change! Old cycle: ${currentCycleIdentifier}, New cycle: ${newCycleIdentifier}`);
       setUserCardsWithPerks(currentData => 
         currentData.map(cardData => ({
           ...cardData,
@@ -276,8 +295,8 @@ export default function HomeScreen() {
         <Text style={styles.headerTitle}>Dashboard</Text>
 
         {/* Temporary button to simulate month end - FOR DEV ONLY */}
-        <TouchableOpacity onPress={processNewMonth} style={{backgroundColor: '#ddd', padding: 10, marginVertical:10, alignItems: 'center'}}>
-          <Text>DEV: Simulate New Month & Reset</Text>
+        <TouchableOpacity onPress={() => processNewMonth(true)} style={{backgroundColor: '#ddd', padding: 10, marginVertical:10, alignItems: 'center'}}>
+          <Text>DEV: Force Next Month & Reset</Text>
         </TouchableOpacity>
 
         {/* Summary Cards Placeholder */}
@@ -319,55 +338,15 @@ export default function HomeScreen() {
                     <Text style={styles.cardName}>{card.name}</Text>
                     <Text style={styles.valueSavedText}>Value Saved: ${totalValueSavedForCard}</Text>
                   </View>
-                  {perks.map((perk) => {
-                    const isRedeemed = perk.status === 'redeemed';
-                    const isPending = perk.status === 'pending';
-                    return (
-                      <View key={perk.id} style={styles.perkItemContainer}>
-                        <TouchableOpacity 
-                          onPress={() => handleTapPerk(card.id, perk.id, perk)} 
-                          onLongPress={() => handleLongPressPerk(card.id, perk.id, perk)}
-                          delayLongPress={300} 
-                          style={styles.perkInteractionZone} 
-                        >
-                          {/* Content: Info + Button. */}
-                          <View style={styles.perkContentRow}>
-                            <View style={styles.perkInfo}>
-                              <Text style={[styles.perkName, isRedeemed && styles.perkNameRedeemed, isPending && styles.perkNamePending]}>
-                                {perk.name} 
-                                {perk.streakCount > 0 && <Text style={styles.streakText}>🔥{perk.streakCount}</Text>}
-                              </Text>
-                              <Text style={[styles.perkValue, isRedeemed && styles.perkValueRedeemed, isPending && styles.perkValuePending]}>(${perk.value} / {perk.period})</Text>
-                            </View>
-                            <TouchableOpacity 
-                              style={[
-                                styles.redeemButton,
-                                (isRedeemed || isPending) && styles.redeemButtonDisabled, // Disable for redeemed or pending for tap action
-                                // Optionally, add a specific style for pending if redeemButtonDisabled is too generic
-                              ]}
-                              onPress={() => handleTapPerk(card.id, perk.id, perk)} 
-                              onLongPress={() => handleLongPressPerk(card.id, perk.id, perk)} 
-                              disabled={isRedeemed || isPending} // Disable tap if redeemed or pending
-                            >
-                              <Text style={styles.redeemButtonText}>                                
-                                {isRedeemed ? 'View' : (isPending ? 'Pending' : 'Redeem')}
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                          
-                          {/* New Progress Bar section */}
-                          <View style={styles.progressBarTrack}>
-                            <View style={[
-                              styles.progressBarFill,
-                              isRedeemed && { width: '100%' }, // Full width if redeemed
-                              isPending && styles.progressBarFillPending, // Pending style if pending (could also be partial width)
-                              isPending && { width: '50%' } // Example: 50% width for pending, adjust as needed
-                            ]} />
-                          </View>
-                        </TouchableOpacity>
-                      </View>
-                    );
-                  })}
+                  {perks.map((perk) => (
+                    <PerkItem 
+                      key={perk.id} // Ensure key is on the component itself when mapping
+                      perk={perk} 
+                      cardId={card.id} 
+                      onTapPerk={handleTapPerk} 
+                      onLongPressPerk={handleLongPressPerk} 
+                    />
+                  ))}
                 </View>
               );
             })
@@ -460,114 +439,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600', // Green color for positive reinforcement
   },
-  perkItemContainer: { 
-    borderRadius: 8,
-    marginBottom: 10,
-    padding: 12, // Added: Padding around content and new progress bar
-  },
-  perkItemRedeemedContainer: {
-    backgroundColor: '#c3e6cb', // Background when redeemed (can be same as progressBarFilled or slightly different)
-  },
-  progressBarBackground: { // Visual for empty part - could have patterns
-    // This is now handled by perkItemContainer backgroundColor
-    // If you want a distinct visual like stripes, style this view explicitly.
-    // For example: backgroundColor: 'repeating-linear-gradient(45deg, #d0d0d0, #d0d0d0 5px, #e0e0e0 5px, #e0e0e0 10px)'
-    // Note: linear-gradient is not directly supported, would need an ImageBackground or a library for complex patterns.
-    // For simplicity, we're using the perkItemContainer's background.
-  },
-  progressBarFilled: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: '100%', // Fills container
-    backgroundColor: '#28a745', // Green filled color
-    borderRadius: 8, // Match container
-  },
-  perkContentRow: { // Renamed from perkContentOverlay and modified
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8, // Added: Space before the new progress bar
-  },
-  perkInfo: {
-    flex: 1,
-    marginRight: 8, // Space before button
-  },
-  perkName: {
-    fontSize: 15,
-    fontWeight: '600', // Slightly bolder
-    color: '#343a40', // Darker for better contrast on light gray
-    marginBottom: 2,
-  },
-  perkNameRedeemed: {
-    color: '#155724', // Dark green text for redeemed state
-    textDecorationLine: 'line-through', // Optional: strike-through for redeemed
-  },
-  perkNamePending: { // New style for pending perk name
-    color: '#856404', // Dark yellow/brown for pending
-    fontStyle: 'italic',
-  },
-  streakText: { // New style for streak display
-    fontSize: 13,
-    color: '#ff9800', // Orange color for streak
-    marginLeft: 5,
-  },
-  perkValue: { // New style for value/period text
-    fontSize: 13,
-    color: '#495057',
-  },
-  perkValueRedeemed: {
-    color: '#155724',
-    textDecorationLine: 'line-through', // Optional: strike-through for redeemed
-  },
-  perkValuePending: { // New style for pending perk value
-    color: '#856404',
-    fontStyle: 'italic',
-  },
-  redeemButton: {
-    backgroundColor: '#007bff', // Blue for redeem action button
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 6,
-    marginLeft: 10,
-  },
-  redeemButtonDisabled: { // Style for when perk is redeemed
-    backgroundColor: '#6c757d', // Gray when disabled/redeemed
-  },
-  redeemButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
   noCardsSelectedText: { // New style for message
     textAlign: 'center',
     marginTop: 20,
     fontSize: 16,
     color: '#666666',
   },
-  // New styles for the progress bar
-  progressBarTrack: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#e9ecef', // Color of the empty part of the bar
-    overflow: 'hidden', // Ensures the fill is clipped to rounded corners
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#28a745', // Color of the filled part of the bar
-    borderRadius: 4, // Match track's border radius
-  },
-  // Style for pending progress bar fill
-  progressBarFillPending: {
-    height: '100%',
-    backgroundColor: '#ffc107', // Yellow for pending status
-    borderRadius: 4,
-  },
-  perkInteractionZone: {
-    // This style can be used on the parent TouchableOpacity if you want the whole row to be long-pressable
-    // For example, you might move the onPress/onLongPress from the inner redeemButton to this parent TouchableOpacity
-    // and then the perkContentRow would be inside it.
-    // If you keep them separate, ensure styling allows both to be pressed easily.
-  },
+  // Styles moved to PerkItem.tsx:
+  // perkItemContainer, perkInteractionZone, perkContentRow, perkInfo, perkName, perkNameRedeemed,
+  // perkNamePending, streakText, perkValue, perkValueRedeemed, perkValuePending,
+  // redeemButton, redeemButtonDisabled, redeemButtonText,
+  // progressBarTrack, progressBarFill, progressBarFillPending
 }); 
