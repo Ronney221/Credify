@@ -9,14 +9,48 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourbundleid.credify",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "dunkindonuts",
+          "uber"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.yourpackage.credify",
+      "intentFilters": [],
+      "queries": [
+        {
+          "package": "com.dunkinbrands.otgo"
+        },
+        {
+          "intent": [
+            {
+              "action": "android.intent.action.VIEW",
+              "data": {
+                "scheme": "dunkindonuts"
+              }
+            }
+          ]
+        },
+        {
+          "intent": [
+            {
+              "action": "android.intent.action.VIEW",
+              "data": {
+                "scheme": "uber"
+              }
+            }
+          ]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",

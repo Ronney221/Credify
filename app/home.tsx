@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Card, Benefit, allCards } from '../src/data/card-data'; // Assuming selected card IDs might be passed
+import { openPerkTarget } from './utils/linking'; // Import the new utility
 
 // Define PerkStatus type
 type PerkStatus = 'available' | 'pending' | 'redeemed';
@@ -77,22 +78,28 @@ export default function HomeScreen() {
     // TODO: Calculate summary data based on new data
   }, [params.selectedCardIds]); // Re-run if selectedCardIds change
 
-  const handleRedeemPerk = (cardId: string, perkId: string) => {
-    setUserCardsWithPerks(currentCards => 
-      currentCards.map(cardData => {
-        if (cardData.card.id === cardId) {
-          return {
-            ...cardData,
-            perks: cardData.perks.map(perk => 
-              perk.id === perkId ? { ...perk, status: 'redeemed' as PerkStatus } : perk
-            ),
-          };
-        }
-        return cardData;
-      })
-    );
-    // TODO: Implement actual Linking to redeem the perk
-    console.log(`Attempting to redeem perk ${perkId} for card ${cardId}`);
+  const handleRedeemPerk = async (cardId: string, perkId: string, perkToOpen: CardPerk) => {
+    const successfullyOpened = await openPerkTarget(perkToOpen);
+
+    if (successfullyOpened) {
+      setUserCardsWithPerks(currentCards => 
+        currentCards.map(cardData => {
+          if (cardData.card.id === cardId) {
+            return {
+              ...cardData,
+              perks: cardData.perks.map(perk => 
+                perk.id === perkId ? { ...perk, status: 'redeemed' as PerkStatus } : perk
+              ),
+            };
+          }
+          return cardData;
+        })
+      );
+      // TODO: Update totalValueUsed based on perkToOpen.value
+      console.log(`Perk ${perkId} for card ${cardId} marked as redeemed after successful link opening.`);
+    } else {
+      console.log(`Attempted to open perk ${perkId} for card ${cardId}, but it was not successful (app not installed or error).`);
+    }
   };
 
   // TODO: Implement functions to calculate summary data (monthly, yearly credits, value used)
@@ -138,7 +145,7 @@ export default function HomeScreen() {
                         </View>
                         <TouchableOpacity 
                           style={[styles.redeemButton, isRedeemed && styles.redeemButtonDisabled]}
-                          onPress={() => handleRedeemPerk(card.id, perk.id)} // Corrected params order
+                          onPress={() => handleRedeemPerk(card.id, perk.id, perk)} // Pass the full perk object
                           disabled={isRedeemed}
                         >
                           <Text style={styles.redeemButtonText}>

@@ -25,7 +25,7 @@ export const allCards: Card[] = [
     benefits: [
       {
         id: 'amex_gold_dunkin',
-        name: 'Dunkin Donuts Credit',
+        name: 'Dunkin\' Donuts Credit',
         value: 7,
         period: 'monthly',
         description: 'Up to $7 in statement credits each month for Dunkin Donuts purchases.',
