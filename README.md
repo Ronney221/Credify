@@ -1,50 +1,95 @@
-# Welcome to your Expo app 👋
+# Credify: Credit Card Perk Optimizer & Tracker 🚀
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Credify is a mobile application designed to help you unlock the full potential of your credit card rewards and benefits. Stop leaving money on the table and start maximizing your savings with intelligent perk tracking, timely reminders, and a gamified redemption experience!
 
-## Get started
+## What is Credify? 🤔
 
-1. Install dependencies
+Do you have multiple credit cards, each with a unique set of perks like monthly dining credits, travel bonuses, or subscription rebates? It can be challenging to keep track of them all, leading to missed opportunities and lost value.
 
-   ```bash
-   npm install
-   ```
+Credify simplifies this by:
 
-2. Start the app
+*   Allowing you to select your credit cards from a pre-populated list (Amex Gold, Chase Sapphire Reserve, Amex Platinum, and many more!).
+*   Displaying all associated perks in an easy-to-navigate dashboard.
+*   Helping you track the redemption status of each perk ('available', 'pending', 'redeemed').
+*   Providing deep-linking capabilities to quickly open the relevant merchant app or website to redeem your perk.
+*   Motivating you with gamification features like redemption streaks and progress tracking.
+*   Sending timely notifications for monthly perk resets and upcoming card renewal dates.
 
-   ```bash
-   npx expo start
-   ```
+## Key Features ✨
 
-In the output, you'll find options to open the app in a
+*   **Easy Card Selection:** Add your credit cards and optionally set annual renewal dates.
+*   **Comprehensive Dashboard:** Get an at-a-glance view of your potential vs. redeemed value for the month and year.
+*   **Perk Tracking:** See a detailed list of perks for each selected card.
+*   **One-Tap Redemption:** "Redeem" button deep-links to merchant apps (e.g., Uber, Grubhub, Resy) or websites. Multi-choice alerts for flexible credits!
+*   **Status Management:** Manually update perk status (Available, Pending, Redeemed) with a long-press.
+*   **Visual Progress:** UI updates reflect perk status (styling changes, progress bars).
+*   **Gamification Engine:**
+    *   **Streak Tracking:** Build monthly redemption streaks for perks (🔥🥉🥈🏆) and see cold streaks (🥶) for missed opportunities.
+    *   **Value Saved:** See cumulative value saved per card and overall.
+    *   **Celebration Animations:** Enjoy a little celebration for full-month perk completions!
+*   **Smart Notifications:**
+    *   Reminders for monthly perk resets (7 days before, 3 days before, 1st of month).
+    *   Alerts for upcoming credit card annual renewal dates.
+*   **Theme Support:** Adapts to your device's light/dark mode.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Why Use Credify? 💰
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+*   **Save Money:** Never miss out on valuable statement credits or discounts again.
+*   **Stay Organized:** All your perks, their values, and statuses in one place.
+*   **Discover Value:** Easily see how much potential value your cards offer.
+*   **Effortless Redemption:** Quick links to redeem perks directly.
+*   **Motivation:** Gamification helps you build good habits around using your benefits.
 
-## Get a fresh project
+## Technology Stack 💻
 
-When you're ready, run:
+This application showcases proficiency in a modern mobile development stack:
 
-```bash
-npm run reset-project
-```
+*   **Frontend:** React Native, Expo
+*   **Language:** TypeScript
+*   **Navigation:** Expo Router (file-based routing)
+*   **State Management:** React Hooks (`useState`, `useEffect`, `useCallback`), Context API (implied for theme)
+*   **UI & Styling:**
+    *   Custom React Native components
+    *   React Native StyleSheet for styling
+    *   Lottie by Airbnb for animations (`lottie-react-native`)
+    *   Date Time Picker (`@react-native-community/datetimepicker`)
+    *   Safe Area Handling (`react-native-safe-area-context`)
+*   **Push Notifications:** `expo-notifications`
+*   **Deep Linking:** React Native `Linking` API, `expo-linking`
+*   **Device Features:** `expo-status-bar`, `expo-haptics` (via HapticTab)
+*   **Development Workflow:** Expo CLI, Development Builds, Simulators/Emulators
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+*(Planned Future Backend: Firebase for Authentication and Firestore database, potentially with FastAPI/Node.js for a dedicated API layer if needed).*
 
-## Learn more
+## Project Status 🚧
 
-To learn more about developing your project with Expo, look at the following resources:
+This project is currently at a Minimum Viable Product (MVP) stage, demonstrating core functionality. Future enhancements are planned as outlined in the `todo.md` file, including full backend integration for data persistence and user accounts.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Getting Started (Development) 🧑‍💻
 
-## Join the community
+1.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+    (or `yarn install`)
 
-Join our community of developers creating universal apps.
+2.  **Start the Expo development server:**
+    ```bash
+    npx expo start
+    ```
+    Follow the prompts to open the app in an iOS simulator, Android emulator, or on a physical device using the Expo Go app (for features not requiring native builds) or a development build.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+3.  **To run on a specific platform with native capabilities (recommended for full feature testing):**
+    ```bash
+    npx expo run:ios
+    # or
+    npx expo run:android
+    ```
+
+## Screenshots & Demo 📸
+
+*(Placeholder: Consider adding a GIF or a few key screenshots of the app in action here! This significantly boosts a README's appeal.)*
+
+---
+
+*This README is actively maintained. For a detailed list of planned features and ongoing tasks, please see the `todo.md` file in this repository.* 
