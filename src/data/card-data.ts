@@ -32,7 +32,7 @@ export const allCards: Card[] = [
       },
       {
         id: 'amex_gold_uber_grubhub',
-        name: 'Uber/Grubhub Credit',
+        name: 'Uber / Grubhub Credit',
         value: 10,
         period: 'monthly',
         description: 'Up to $10 in statement credits each month for Uber or Grubhub.',

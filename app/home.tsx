@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StatusBar,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -57,9 +58,11 @@ export default function HomeScreen() {
   >([]);
 
   // TODO: State for summary data
-  const [monthlyCredits, setMonthlyCredits] = useState(0);
-  const [yearlyCredits, setYearlyCredits] = useState(0);
-  const [totalValueUsed, setTotalValueUsed] = useState(0);
+  const [monthlyCreditsPossible, setMonthlyCreditsPossible] = useState(0);
+  const [monthlyCreditsRedeemed, setMonthlyCreditsRedeemed] = useState(0);
+  const [yearlyCreditsPossible, setYearlyCreditsPossible] = useState(0);
+  const [yearlyCreditsRedeemed, setYearlyCreditsRedeemed] = useState(0);
+  // const [totalValueUsed, setTotalValueUsed] = useState(0); // We can perhaps derive this or keep it if it means something different
 
   useFocusEffect(
     useCallback(() => {
@@ -71,15 +74,89 @@ export default function HomeScreen() {
     }, [])
   );
 
+  // Effect to update userCardsWithPerks based on route params
   useEffect(() => {
-    console.log("HomeScreen params:", params);
+    console.log("HomeScreen params for cards:", params.selectedCardIds);
     const data = getSelectedUserCardsWithPerks(params.selectedCardIds);
     setUserCardsWithPerks(data);
-    // TODO: Calculate summary data based on new data
-  }, [params.selectedCardIds]); // Re-run if selectedCardIds change
+  }, [params.selectedCardIds]); // Only re-run if selectedCardIds change
+
+  // Effect to update summary credit data when userCardsWithPerks changes (e.g., after redemption)
+  useEffect(() => {
+    console.log("Calculating summary data because userCardsWithPerks changed");
+    let mPossible = 0;
+    let mRedeemed = 0;
+    let yPossible = 0;
+    let yRedeemed = 0;
+
+    userCardsWithPerks.forEach(({ perks }) => { // Use userCardsWithPerks from state here
+      perks.forEach(perk => {
+        if (perk.period === 'monthly') {
+          mPossible += perk.value;
+          if (perk.status === 'redeemed') {
+            mRedeemed += perk.value;
+          }
+        // Linter error fix: Assuming 'annually' covers 'yearly'. 
+        // If card-data.ts uses 'yearly' ensure it's included or change this condition.
+        } else if (perk.period === 'annually') { 
+          yPossible += perk.value;
+          if (perk.status === 'redeemed') {
+            yRedeemed += perk.value;
+          }
+        }
+      });
+    });
+
+    setMonthlyCreditsPossible(mPossible);
+    setMonthlyCreditsRedeemed(mRedeemed);
+    setYearlyCreditsPossible(yPossible);
+    setYearlyCreditsRedeemed(yRedeemed);
+
+  }, [userCardsWithPerks]); // Only re-run if userCardsWithPerks change
+
+  // Configuration for multi-choice perks
+  const multiChoicePerksConfig: Record<string, Array<{ label: string; targetPerkName: string }>> = {
+    // Example: Assumes you have a perk named "Flexible Food Delivery Credit" in your card-data.ts
+    "Uber / Grubhub Credit": [
+      { label: "Open Uber (Rides)", targetPerkName: "Uber Ride Credit" },
+      { label: "Open Uber Eats", targetPerkName: "Uber Eats Credit" },
+      { label: "Open GrubHub", targetPerkName: "Grubhub Credit" },
+    ],
+    // Add other flexible perks here if needed
+  };
 
   const handleRedeemPerk = async (cardId: string, perkId: string, perkToOpen: CardPerk) => {
-    const successfullyOpened = await openPerkTarget(perkToOpen);
+    const choices = multiChoicePerksConfig[perkToOpen.name];
+
+    let successfullyOpened = false;
+    let actualPerkNameForLinking = perkToOpen.name; // Default to the original perk name
+
+    if (choices) {
+      // This is a multi-choice perk
+      await new Promise<void>(resolve => {
+        Alert.alert(
+          `Redeem ${perkToOpen.name}`,
+          "Choose an app to open:",
+          [
+            ...choices.map(choice => ({
+              text: choice.label,
+              onPress: async () => {
+                // Create a temporary perk object with the chosen target name for linking
+                const tempPerkForLinking: CardPerk = { ...perkToOpen, name: choice.targetPerkName };
+                successfullyOpened = await openPerkTarget(tempPerkForLinking);
+                actualPerkNameForLinking = choice.targetPerkName; // For logging, not strictly needed for redemption status logic
+                resolve();
+              },
+            })),
+            { text: "Cancel", style: "cancel", onPress: () => resolve() },
+          ],
+          { cancelable: true, onDismiss: () => resolve() }
+        );
+      });
+    } else {
+      // Single-target perk
+      successfullyOpened = await openPerkTarget(perkToOpen);
+    }
 
     if (successfullyOpened) {
       setUserCardsWithPerks(currentCards => 
@@ -96,9 +173,13 @@ export default function HomeScreen() {
         })
       );
       // TODO: Update totalValueUsed based on perkToOpen.value
-      console.log(`Perk ${perkId} for card ${cardId} marked as redeemed after successful link opening.`);
+      console.log(`Perk ${perkId} (${actualPerkNameForLinking}) for card ${cardId} marked as redeemed after successful link opening.`);
     } else {
-      console.log(`Attempted to open perk ${perkId} for card ${cardId}, but it was not successful (app not installed or error).`);
+      if (choices && !successfullyOpened) { // only log if it was a multi-choice and nothing was chosen/opened
+         console.log(`Multi-choice perk ${perkToOpen.name} - no action taken or linking failed.`);
+      } else if (!choices) { // original logging for single perks
+        console.log(`Attempted to open perk ${perkId} (${perkToOpen.name}) for card ${cardId}, but it was not successful (app not installed or error).`);
+      }
     }
   };
 
@@ -106,24 +187,31 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+      {/* <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} /> */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitle}>Dashboard</Text>
 
         {/* Summary Cards Placeholder */}
         <View style={styles.summaryContainer}>
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryValue}>${monthlyCredits}</Text>
-            <Text style={styles.summaryLabel}>Credits Available (Month)</Text>
+            <Text style={styles.summaryValue}>
+              ${monthlyCreditsRedeemed} / ${monthlyCreditsPossible}
+            </Text>
+            <Text style={styles.summaryLabel}>Monthly Credits Used</Text>
+            {/* Optional: Add Progress Bar Here */}
           </View>
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryValue}>${yearlyCredits}</Text>
-            <Text style={styles.summaryLabel}>Credits Available (Year)</Text>
+            <Text style={styles.summaryValue}>
+              ${yearlyCreditsRedeemed} / ${yearlyCreditsPossible}
+            </Text>
+            <Text style={styles.summaryLabel}>Yearly Credits Used</Text>
+            {/* Optional: Add Progress Bar Here */}
           </View>
+          {/* Original Total Value Used - decide if still needed or how it relates
           <View style={styles.summaryCard}>
             <Text style={styles.summaryValue}>${totalValueUsed}</Text>
             <Text style={styles.summaryLabel}>Total Value Used</Text>
-          </View>
+          </View> */}
         </View>
 
         {/* List of Cards and Perks */}

@@ -20,10 +20,40 @@ const perkNameMappings: Record<string, PerkTargetConfig> = {
     appStoreUrlIOS: 'https://apps.apple.com/app/id1056813463',
     appStoreUrlAndroid: 'https://play.google.com/store/apps/details?id=com.dunkinbrands.otgo',
   },
-  "Uber Credits": { // Example: For a generic Uber credit perk
+  "Uber Ride Credit": { // Renamed from "Uber Credits" for clarity
     appScheme: 'uber://',
     websiteUrl: 'https://www.uber.com/ride/',
     appName: 'Uber',
+    appStoreUrlIOS: 'https://apps.apple.com/app/uber/id368677368',
+    appStoreUrlAndroid: 'https://play.google.com/store/apps/details?id=com.ubercab',
+  },
+  "Uber Eats Credit": {
+    appScheme: 'ubereats://', // Basic scheme to open the app. Specific paths like /store/browse can be added if needed.
+    websiteUrl: 'https://www.ubereats.com/',
+    appName: 'Uber Eats',
+    appStoreUrlIOS: 'https://apps.apple.com/app/uber-eats-food-delivery/id1058959277',
+    appStoreUrlAndroid: 'https://play.google.com/store/apps/details?id=com.ubercab.eats',
+  },
+  "DoorDash Grocery Credit": {
+    appScheme: 'doordash://',
+    websiteUrl: 'https://www.doordash.com/',
+    appName: 'DoorDash',
+    appStoreUrlIOS: 'https://apps.apple.com/app/doordash-food-delivery/id719972451',
+    appStoreUrlAndroid: 'https://play.google.com/store/apps/details?id=com.dd.doordash',
+  },
+  "Grubhub Credit": { // Scheme is likely, may need verification
+    appScheme: 'grubhub://',
+    websiteUrl: 'https://www.grubhub.com/',
+    appName: 'Grubhub',
+    appStoreUrlIOS: 'https://apps.apple.com/app/grubhub-local-food-delivery/id302920553',
+    appStoreUrlAndroid: 'https://play.google.com/store/apps/details?id=com.grubhub.android',
+  },
+  "Resy Credit": { // Scheme is likely, may need verification
+    appScheme: 'resy://',
+    websiteUrl: 'https://resy.com/',
+    appName: 'Resy',
+    appStoreUrlIOS: 'https://apps.apple.com/app/resy/id799274035',
+    appStoreUrlAndroid: 'https://play.google.com/store/apps/details?id=com.resy.android',
   },
   // Add more perk name mappings here
   // e.g., "Monthly Dining Credit": { appScheme: 'resy://', websiteUrl: 'https://resy.com', appName: 'Resy' }
@@ -52,7 +82,13 @@ export const openPerkTarget = async (perk: CardPerk): Promise<boolean> => {
   const friendlyAppName = appName || perk.name.split(' ')[0]; // Default to first word of perk name if appName not specified
 
   try {
-    const canOpenApp = await Linking.canOpenURL(appScheme);
+    console.log(`[linking.ts] Checking if app can be opened with scheme: ${appScheme} for perk: ${perk.name}`);
+    const canOpenApp = await Linking.canOpenURL(appScheme).catch(err => {
+      console.error(`[linking.ts] Error calling canOpenURL for ${appScheme}:`, err);
+      return false;
+    });
+    console.log(`[linking.ts] canOpenURL for ${appScheme} returned: ${canOpenApp}`);
+
     if (canOpenApp) {
       await Linking.openURL(appScheme);
       return true; // App scheme successfully launched

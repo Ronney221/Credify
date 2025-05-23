@@ -14,8 +14,13 @@
       "infoPlist": {
         "LSApplicationQueriesSchemes": [
           "dunkindonuts",
-          "uber"
-        ]
+          "uber",
+          "ubereats",
+          "doordash",
+          "grubhub",
+          "resy"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -41,11 +46,66 @@
           ]
         },
         {
+          "package": "com.ubercab"
+        },
+        {
           "intent": [
             {
               "action": "android.intent.action.VIEW",
               "data": {
                 "scheme": "uber"
+              }
+            }
+          ]
+        },
+        {
+          "package": "com.ubercab.eats"
+        },
+        {
+          "intent": [
+            {
+              "action": "android.intent.action.VIEW",
+              "data": {
+                "scheme": "ubereats"
+              }
+            }
+          ]
+        },
+        {
+          "package": "com.dd.doordash"
+        },
+        {
+          "intent": [
+            {
+              "action": "android.intent.action.VIEW",
+              "data": {
+                "scheme": "doordash"
+              }
+            }
+          ]
+        },
+        {
+          "package": "com.grubhub.android"
+        },
+        {
+          "intent": [
+            {
+              "action": "android.intent.action.VIEW",
+              "data": {
+                "scheme": "grubhub"
+              }
+            }
+          ]
+        },
+        {
+          "package": "com.resy.android"
+        },
+        {
+          "intent": [
+            {
+              "action": "android.intent.action.VIEW",
+              "data": {
+                "scheme": "resy"
               }
             }
           ]
@@ -71,6 +131,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ec64179f-210d-4298-87f3-48a2fdc065e9"
+      }
     }
   }
 }
